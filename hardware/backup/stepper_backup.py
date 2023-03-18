@@ -2,7 +2,6 @@ import math
 import threading
 import time
 import RPi.GPIO as GPIO
-import eastermath
 
 step_sequence = [[1,0,0,1],
                  [1,0,0,0],
@@ -23,6 +22,7 @@ class EasterStepper:
 		self.ignore_step = False
 		
 		self.wheel_extent = 2 * math.pi * self.config.get('wheel_radius', 10)
+		
 		self.step_pos = 0
 		
 		self.setupPins()
@@ -39,13 +39,17 @@ class EasterStepper:
 		for pin in self.config['motor_pins']: GPIO.setup( pin, GPIO.OUT )
 		self.setPinsLow()
 	
-	def getCurrentWay(self): return self.step_pos / self.steps_of_turn() * self.wheel_extent
-	def stepsOfWay(self, millimeters: float): return round(millimeters / self.wheel_extent * self.steps_of_turn())
+	def getCurrentWay(self):
+		return self.step_pos / self.steps_of_turn() * self.wheel_extent
 	
-	def steps_of_turn(self): return self.config['steps_of_turn']
+	def stepsOfWay(self, millimeters: float):
+		return round(millimeters / self.wheel_extent * self.steps_of_turn())
 	
-	def pos(self): return self.step_pos
-	def modulopos(self): return eastermath.modulo(self.step_pos, self.steps_of_turn())
+	def steps_of_turn(self):
+		return self.config['steps_of_turn']
+
+	def pos(self):
+		return self.step_pos
 	
 	def setSpeed(self, sleep: float):
 		self.step_sleep = sleep

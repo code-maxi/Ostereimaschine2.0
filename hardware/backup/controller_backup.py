@@ -5,7 +5,7 @@ import RPi.GPIO as GPIO
 import stepper
 import servo
 import threading
-import eastermath
+from pynput import keyboard
 
 defaultEasterControlerConfig = {
 	'ystepper': {
@@ -54,6 +54,12 @@ defaultEasterControlerConfig = {
 	'color_distance': 10.8
 }
 
+def em(pn, z):
+	n = pn
+	while n > z: n -= z
+	while n < 0: n += z
+	return n
+
 class EasterControler:
 	def __init__(self, config: dict):
 		self.config = defaultEasterControlerConfig
@@ -65,15 +71,17 @@ class EasterControler:
 		
 		self.egg_border_width = self.config['egg_use_percent'] / 100 * self.config['egg_length']
 		
+		self.key_on = threading.Event()
+
+		
 		self.log('initialized with following config:')
 		self.log(self.config)
-		
-		self.quiet = False
 		
 		self.setup()
 		
 	def log(self, obj):
-		if not self.quiet: print('EasterControler: ' + str(obj))
+		#print('EasterControler: ' + str(obj))
+		pass
 		
 	def setup(self):
 		self.log('Easter Controller setup...')
@@ -102,7 +110,9 @@ class EasterControler:
 		way = round(percent / 100 * self.egg_border_width)
 		steps = self.xstepper.stepsOfWay(way)
 		currentPos = self.xstepper.pos()
-				
+		
+		self.log(f'x-way: way={way} steps={steps} XPOS={currentPos}')
+		
 		return steps - currentPos
 	
 	
