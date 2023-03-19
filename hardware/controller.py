@@ -7,66 +7,12 @@ import stepper
 import servo
 import threading
 import eastermath as em
-
-defaultEasterControlerConfig = {
-	'ystepper': {
-		'motor_pins': [4,17,27,22],
-		'start_step_sleep': 0.003,
-		'steps_of_turn': 4139,
-		'name': 'Y-Stepper'
-	},
-	'xstepper': {
-		'motor_pins': [23,24,25,26],
-		'start_step_sleep': 0.003,
-		'steps_of_turn': 4159,
-		'wheel_radius': 7.65,
-		'name': 'X-Stepper',
-		'mirror-inverted': True
-	},
-	'zstepper': {
-		'motor_pins': [5,6,13,16],
-		'start_step_sleep': 0.002,
-		'steps_of_turn': 4159,
-		'wheel_radius': 7.8,
-		'name': 'Z-Stepper',
-		'mirror-inverted': True
-	},
-	'servo': {
-		'controlPin': 12,
-		'frequenz': 50,
-		'0DC': 2.5,
-		'180DC': 12.5,
-		'startPos': 1
-	},
-	
-	'egg_length': 58.5,
-	'egg_height': 41,
-	'egg_use_percent': 50,
-	
-	'max_stepper_speed': 0.002,
-	
-	'color_pos': {
-		'black': 1,
-		'red': 2,
-		'green': 3,
-		'blue': 4,
-		'orange': 5
-	},
-	'change_color_steps': 50,
-	'start_color': 'blue',
-	'color_distance': 10.8,
-	
-	'penup_offset': 0.25,
-	'penup_sleep': 0.5,
-	
-	'pen_lazy': 25,
-	'pen_lazy_sleep': 0.05,
-	'pen_stroke_width': 1
-}
+import sys
+import default
 
 class EasterControler:
 	def __init__(self, config: dict):
-		self.config = defaultEasterControlerConfig
+		self.config = dict(default.defaultEasterControlerConfig)
 		self.config.update(config)
 		
 		self.pen_servo_offset = 0
@@ -203,7 +149,7 @@ class EasterControler:
 		self.line_to(xpercent, ypercent, move=True)
 		
 	def x_stroke_steps(self) = self.xstepper.distance_to_steps(self.config['pen_stroke_width'])
-	def y_stroke_steps(self) = 50 #TODO!
+	def y_stroke_steps(self) = round(self.config['pen_stroke_width'] / (self.config['egg_height'] * math.pi) * self.ystepper.steps_of_turn()) #TODO!
 		
 	def circle(self, **kwargs):
 		xpos_p = kwargs.get('xpos', self.x_pos())
@@ -217,14 +163,16 @@ class EasterControler:
 		
 		res = kwargs.get('res', 4)
 		
-		depthspace = "  " * kwargs.get('depth', 0)
+		depth = kwargs.get('depth', 0)
+		depthspace = "  " * depth 
 		colors     = kwargs.get('colors', [self.current_color])
 		colorindex = kwargs.get('colorindex', 0)
 		
-		self.change_color(colors[colorindex])
-		
-		self.log(f'{depthspace}drawing circle with args {kwargs} on pos {self.pos_to_string()}', 10)
-				
+		self.log(f'{depthspace}drawing circle with args {kwargs}', 10)
+		self.log(f'{depthspace}using color {colors[colorindex]}', 10)
+
+        self.change_color(colors[colorindex])
+
 		for r in range(res+1):
 			angle = r / res * 2 * math.pi
 			new_xpos = round(xpos + math.cos(angle) * xrad)
@@ -238,8 +186,9 @@ class EasterControler:
 		    sub_steps_y = kwargs.get('sub_steps_y', self.y_stroke_steps()) # getting pen stroke smaller
 		    new_xrad = xrad - sub_steps_x
 		    new_yrad = yrad - sub_steps_y
+		    max_depth = kwargs.get('maxdepth', sys.maxsize) # getting pen stroke smaller
 		    
-		    if new_xrad > 0 and new_yrad > 0:
+		    if new_xrad > 0 and new_yrad > 0 and depth < max_depth:
 		        new_kwargs = dict(kwargs)
 		        
 		        new_kwargs.update({
@@ -252,7 +201,6 @@ class EasterControler:
 	            })
 	            
 		        self.circle(**new_kwargs) # recursive call
-		        
 		        
 		
 	def penup(self):   self.set_pen_up(True)
