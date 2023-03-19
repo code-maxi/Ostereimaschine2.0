@@ -39,8 +39,11 @@ defaultEasterControlerConfig = {
 	},
 	'penup_offset': 0.275,
 	'penup_sleep': 0.2,
+	
 	'egg_length': 58.5,
+	'egg_height': 41
 	'egg_use_percent': 70,
+	
 	'max_stepper_speed': 0.002,
 	'color_pos': {
 		'black': 1,
@@ -51,8 +54,7 @@ defaultEasterControlerConfig = {
 	},
 	'change_color_steps': 50,
 	'start_color': 'blue',
-	'color_distance': 10.8,
-	'egg_max_caliber': 50 # TODO
+	'color_distance': 10.8
 }
 
 class EasterControler:
@@ -68,12 +70,13 @@ class EasterControler:
 		
 		self.print_piority = 0
 		self.log('__init__ with config: ', 10)
-		self.log(self.config)
+		print(self.config)
+		print()
 		
 		self.setup()
 		
 	def log(self, obj, *args):
-	    prio = em.get_save(args, 0, 0) 
+		prio = em.get_save(args, 0, 0) 
 		if prio >= self.print_piority: print('EasterControler: ' + str(obj))
 		
 	def setup(self):
@@ -95,67 +98,69 @@ class EasterControler:
 		return stepper
 		
 	def x_pos(self): return self.xstepper.pos()
-	def y_pos(self): return self.xstepper.modulo_pos()
+	def y_pos(self): return self.ystepper.modulo_pos()
 		
 	def x_percent(self): return self.xstepper.steps_to_distance() / self.egg_border_width * 100
 	def y_percent(self): return self.y_pos() / self.ystepper.steps_of_turn() * 100
 	
-	def y_caliber(self): return em.egg_caliber(self, y_percent(), self.config['egg_max_caliber'])
+	def y_caliber(self):
+		xpercent = self.xstepper.steps_to_distance() / self.config['egg_length']
+		return em.egg_caliber(self, xpercent, self.config['egg_height'])
 	
 	def x_steps(self, percent: float):
 		if percent < -50 or percent > 50: raise Exception(f'the x-pos ({percent}) has to be between -50% and 50%')
 		distance = percent / 100 * self.egg_border_width
 		steps = self.xstepper.distance_to_steps(distance)
 		
-		self.log(f'x-way: distance={way}mm steps={steps}x pos={self.x_pos()}')
+		self.log(f'x-way: distance={distance}mm steps={steps}x pos={self.x_pos()}')
 		return steps - self.xstepper.pos()
 		
 	def y_steps(self, percent: float, **kwargs):
-	    factor = em.modulo(percent, 100) / 100
-	    steps_of_turn = self.ystepper.steps_of_turn()
-	    
-	    newPos = round(factor * steps_of_turn)
-	    steps1 = newPos - y_pos()
-	    steps2 = steps1 + (-steps_of_turn if steps1 > 0 else steps_of_turn)
-	    
-	    minmax = em.abs_minmax(steps1, steps2)
-	    index = 1 if kwargs.get('long', False) == True else 0
-	    
-	    return minmax[index]
-	    
-	def way_to(self, xway: int, yway: int):
-	    steps_minmax   = em.abs_minmax(xway, yway)
-	    isx_max        = way_minmax[1] == xway
-	    stepper_minmax = (
-	        self.ystepper if isx_max else self.xstepper,
-	        self.xstepper if isx_max else self.ystepper
-	    )
-	    
-	    max_sleep = self.config['max_stepper_speed']
-	    duration = (abs(way_minmax[1]) - 1) * max_sleep
-	    min_sleep = duration / (abs(way_minmax[0]) - 1) if abs(way_minmax[0]) > 1 else -1
-	    
-	    sleep_minmax = (min_sleep, max_sleep)
-	    
-	    self.log(f'way_to:\nsteps_minmax:{steps_minmax}\nstepper_minmax:{stepper_minmax}\nsleep_minmax:{sleep_minmax}\n______')
-	    
-	    stepper_minmax[1].setSpeed(sleep_minmax[1])
-	    stepper_minmax[0].setSpeed(sleep_minmax[0])
-	    
-	    thread =                   stepper_minmax[1].turn(steps=steps_minmax[1], thread=True)
-	    if abs(way_minmax[0]) > 0: stepper_minmax[0].turn(steps=steps_minmax[0], thread=False)
-	    
-	    thread.join()
-	    
+		factor = em.modulo(percent, 100) / 100
+		steps_of_turn = self.ystepper.steps_of_turn()
+		
+		newPos = round(factor * steps_of_turn)
+		steps1 = newPos - self.y_pos()
+		steps2 = steps1 + (-steps_of_turn if steps1 > 0 else steps_of_turn)
+		
+		minmax = em.abs_minmax(steps1, steps2)
+		index = 1 if kwargs.get('long', False) == True else 0
+		
+		return minmax[index]
+		
+	def way_to(self, xsteps: int, ysteps: int):
+		steps_minmax   = em.abs_minmax(xsteps, ysteps)
+		isx_max		= steps_minmax[1] == xsteps
+		stepper_minmax = (
+			self.ystepper if isx_max else self.xstepper,
+			self.xstepper if isx_max else self.ystepper
+		)
+		
+		max_sleep = self.config['max_stepper_speed']
+		duration = (abs(steps_minmax[1]) - 1) * max_sleep
+		min_sleep = duration / (abs(steps_minmax[0]) - 1) if abs(steps_minmax[0]) > 1 else -1
+		
+		sleep_minmax = (min_sleep, max_sleep)
+		
+		self.log(f'way_to:\nsteps_minmax:{steps_minmax}\nstepper_minmax:{stepper_minmax}\nsleep_minmax:{sleep_minmax}\n______')
+		
+		stepper_minmax[1].setSpeed(sleep_minmax[1])
+		stepper_minmax[0].setSpeed(sleep_minmax[0])
+		
+		thread =				   stepper_minmax[1].turn(steps=steps_minmax[1], thread=True)
+		if abs(steps_minmax[0]) > 0: stepper_minmax[0].turn(steps=steps_minmax[0], thread=False)
+		
+		thread.join()
+		
 	def line_to(self, xpercent: float, ypercent: float, **kwargs):
 		xsteps = self.x_steps(xpercent)
 		ysteps = self.y_steps(ypercent, long=kwargs.get('long', False))
 		self.log(f'line to steps: {xsteps}:{ysteps}')
-		self.wayTo(xway, yway)
+		self.way_to(xsteps, ysteps)
 		
-	def moveTo(self, xpercent: float, ypercent: float):
+	def move_to(self, xpercent: float, ypercent: float):
 		self.penup()
-		self.lineTo(xpercent, ypercent)
+		self.line_to(xpercent, ypercent)
 		self.pendown()
 		
 	def penup(self):   self.set_pen_up(True)
@@ -202,15 +207,16 @@ class EasterControler:
 		GPIO.cleanup()
 		
 	def pos_to_string(self):
-	    xsteps = self.x_pos()
-	    ysteps = self.y_pos()
-	    xdistance = self.xstepper.steps_to_distance()
-	    xpercent = self.x_pos()
-	    ypercent = self.y_pos()
-	    return f"({xpercent}% | {ypercent}%) ({xdistance}mm | ?mm) ({xsteps}x | {ysteps}x)"
+		dp = 2
+		xsteps = round(self.x_pos(), dp)
+		ysteps = round(self.y_pos(), dp)
+		xdistance = round(self.xstepper.steps_to_distance(), dp)
+		xpercent = round(self.x_percent(), dp)
+		ypercent = round(self.y_percent(), dp)
+		return f"({xpercent}% | {ypercent}%) ({xdistance}mm | ?mm) ({xsteps}x | {ysteps}x)"
 		
 	def log_pos(self): self.log(self.pos_to_string(), 10)
-	    
+		
 	def consoleDebug(self):
 		escape = False
 				
@@ -223,8 +229,8 @@ class EasterControler:
 			try:
 				if typ == 'ex': escape = True
 			
-				elif typ == 'penup': self.setPenUp(True)
-				elif typ == 'pendown': self.setPenUp(False)
+				elif typ == 'penup': self.penup()
+				elif typ == 'pendown': self.pendown()
 				
 				elif 'stepper' in typ:
 					stepper = self.stepper(typ)
@@ -243,7 +249,7 @@ class EasterControler:
 					radius = int(split[1])
 					self.circle(radius)
 					
-				elif typ == 'lineto' or type == 'moveto':
+				elif typ == 'lineto' or typ == 'moveto':
 					x = float(split[1])
 					y = float(split[2])
 					
@@ -251,15 +257,15 @@ class EasterControler:
 					
 					self.log(f'line to ({x}|{y}), long={lw}', 5)
 					
-					if typ == 'lineto': self.lineTo(x, y, long=lw)
-					if typ == 'moveto': self.moveTo(x, y)
+					if typ == 'lineto': self.line_to(x, y, long=lw)
+					if typ == 'moveto': self.move_to(x, y)
 					
 				elif typ == 'grid':
 					for x in range(-50, 50, 10):
 						print(f'x = {x}%: y = ', end='')
 						for y in range(10, 100, 10):
 							print(f'{y}% ', end='')
-							self.moveTo(x,y)
+							self.move_to(x,y)
 						print('')	
 						
 				elif typ == 'pos': self.log_pos()
@@ -273,3 +279,7 @@ class EasterControler:
 				
 		self.cleanup()
 		exit(0)
+		
+controller = EasterControler({})
+controller.consoleDebug()
+

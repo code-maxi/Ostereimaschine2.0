@@ -1,4 +1,7 @@
-import '../controller' as ct
+import sys
+sys.path.append('../')
+
+import controller as ct
 
 controller = ct.EasterControler({})
-easterControler.consoleDebug()
+controller.consoleDebug()
