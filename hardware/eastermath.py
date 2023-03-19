@@ -23,3 +23,4 @@ def egg_caliber(xpercent: float, max_caliber: float):
 	radius = egg_form(fac) * max_caliber
 	return radius
 	
+def direction(n: float): return -1 if n < 0 else (0 if n == 0 else 1)

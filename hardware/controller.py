@@ -38,14 +38,13 @@ defaultEasterControlerConfig = {
 		'180DC': 12.5,
 		'startPos': 1
 	},
-	'penup_offset': 0.25,
-	'penup_sleep': 0.5,
 	
 	'egg_length': 58.5,
 	'egg_height': 41,
-	'egg_use_percent': 70,
+	'egg_use_percent': 50,
 	
 	'max_stepper_speed': 0.002,
+	
 	'color_pos': {
 		'black': 1,
 		'red': 2,
@@ -56,7 +55,13 @@ defaultEasterControlerConfig = {
 	'change_color_steps': 50,
 	'start_color': 'blue',
 	'color_distance': 10.8,
-	'pen_lazy': 180
+	
+	'penup_offset': 0.25,
+	'penup_sleep': 0.5,
+	
+	'pen_lazy': 25,
+	'pen_lazy_sleep': 0.05,
+	'pen_stroke_width': 1
 }
 
 class EasterControler:
@@ -72,6 +77,9 @@ class EasterControler:
 		
 		self.print_piority = 2
 		self.log('__init__ with config: ', 10)
+		
+		self.current_direction = 0
+		
 		print(self.config)
 		print()
 		
@@ -107,7 +115,7 @@ class EasterControler:
 	
 	def y_caliber(self):
 		xpercent = self.xstepper.steps_to_distance() / self.config['egg_length']
-		return em.egg_caliber(self, xpercent, self.config['egg_height'])
+		return em.egg_caliber(xpercent, self.config['egg_height'])
 	
 	def x_steps(self, percent: float):
 		if percent < -50 or percent > 50: raise Exception(f'the x-pos ({percent}) has to be between -50% and 50%')
@@ -164,10 +172,25 @@ class EasterControler:
 		move = kwargs.get('move', False)
 		step_unit = kwargs.get('step', False)
 		
-		if move: self.penup()
+		if move:
+			self.penup()
+			self.current_direction = 0
 		
 		xsteps = xunit - self.x_pos() if step_unit else self.x_steps(xunit)
 		ysteps = self.y_steps(yunit, long=kwargs.get('long', False), step_unit=step_unit)
+		
+		new_direction = em.direction(xsteps)
+		
+		if self.current_direction != new_direction and not move:
+			time.sleep(self.config['pen_lazy_sleep'])
+			
+			adjustment_steps = self.config['pen_lazy'] * (new_direction - self.current_direction)
+			self.log(f'adjustment_steps={adjustment_steps}', 10)
+			self.xstepper.turn(steps=adjustment_steps, count=False)
+			self.current_direction = new_direction
+			
+			time.sleep(self.config['pen_lazy_sleep'])
+		
 		self.log(f'line to steps: {xsteps}:{ysteps}')
 		self.steps_to(xsteps, ysteps)
 		
@@ -303,7 +326,8 @@ class EasterControler:
 				
 				elif typ == 'circle':
 					res = int(split[1])
-					self.circle(rad=500, yrad=200, res=res)
+					rad = int(split[2])
+					self.circle(rad=rad, yrad=round(2/5*rad), res=res)
 					
 				else: self.log(f'Unbekannter typ "{typ}".', 10)
 			
