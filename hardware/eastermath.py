@@ -1,6 +1,6 @@
 def modulo(pn: float, z: float):
 	n = pn
-	while n > z: n -= z
+	while n >= z: n -= z
 	while n < 0: n += z
 	return n
 	
@@ -16,7 +16,7 @@ def get_save(array: list, i: int, *arr):
     none = arr[0] if len(arr) > 0 else None
     return array[i] if i < len(array) else none
     
-def egg_form(x: float): return 1 + ((-x)^2.43 * -0.46 if x < 0 else -0.575 * x^2.1) / 0.75
+def egg_form(x: float): return 1 + (((-x)**2.43) * -0.46 if x < 0 else -0.575 * (x**2.1)) / 0.75
 
 def egg_caliber(xpercent: float, max_caliber: float):
     fac = xpercent/50
