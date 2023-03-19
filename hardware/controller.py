@@ -71,7 +71,7 @@ class EasterControler:
 		
 		self.pen_servo_offset = 0
 		self.ispenup = False
-		self.current_penhole = self.config['color_pos'][self.config['start_color']]
+		self.current_color = self.config['start_color']
 		
 		self.egg_border_width = self.config['egg_use_percent'] / 100 * self.config['egg_length']
 		
@@ -117,21 +117,23 @@ class EasterControler:
 		xpercent = self.xstepper.steps_to_distance() / self.config['egg_length']
 		return em.egg_caliber(xpercent, self.config['egg_height'])
 	
-	def x_steps(self, percent: float):
-		if percent < -50 or percent > 50: raise Exception(f'the x-pos ({percent}) has to be between -50% and 50%')
-		distance = percent / 100 * self.egg_border_width
-		steps = self.xstepper.distance_to_steps(distance)
+	def x_steps(self, xunit: float, **kwargs):
+	    steps = xunit
+	
+	    if not kwargs.get('step_unit', False):
+		    if xunit < -50 or xunit > 50: raise Exception(f'the x-pos ({xunit}) has to be between -50% and 50%')
+		    distance = xunit / 100 * self.egg_border_width
+		    steps = self.xstepper.distance_to_steps(distance)
 		
 		self.log(f'x-way: distance={distance}mm steps={steps}x pos={self.x_pos()}')
 		return steps - self.xstepper.pos()
 		
 	def y_steps(self, yunit: float, **kwargs):
-		stepunit = kwargs.get('step_unit', False)
 		steps_of_turn = self.ystepper.steps_of_turn()
 		
 		newPos = yunit
 		
-		if not stepunit:		
+		if not kwargs.get('step_unit', False):
 			factor = em.modulo(yunit, 100) / 100
 			newPos = round(factor * steps_of_turn)
 		
@@ -172,53 +174,86 @@ class EasterControler:
 		move = kwargs.get('move', False)
 		step_unit = kwargs.get('step', False)
 		
-		if move:
-			self.penup()
-			self.current_direction = 0
+		xsteps = self.x_steps(xunit, step_unit=step_unit)
+		ysteps = self.y_steps(yunit, step_unit=step_unit, long=kwargs.get('long', False))
 		
-		xsteps = xunit - self.x_pos() if step_unit else self.x_steps(xunit)
-		ysteps = self.y_steps(yunit, long=kwargs.get('long', False), step_unit=step_unit)
+		if xsteps != 0 or ysteps != 0: 
+		    if move:
+			    self.penup()
+			    self.current_direction = 0
+		    
+		    new_direction = em.direction(xsteps)
+		    
+		    if self.current_direction != new_direction and not move:
+			    time.sleep(self.config['pen_lazy_sleep'])
+			    
+			    adjustment_steps = self.config['pen_lazy'] * (new_direction - self.current_direction)
+			    self.log(f'adjustment_steps={adjustment_steps}', 10)
+			    self.xstepper.turn(steps=adjustment_steps, count=False)
+			    self.current_direction = new_direction
+			    
+			    time.sleep(self.config['pen_lazy_sleep'])
+		    
+		    self.log(f'line to steps: {xsteps}:{ysteps}')
+		    self.steps_to(xsteps, ysteps)
+		    
+		    if move: self.pendown()
 		
-		new_direction = em.direction(xsteps)
-		
-		if self.current_direction != new_direction and not move:
-			time.sleep(self.config['pen_lazy_sleep'])
-			
-			adjustment_steps = self.config['pen_lazy'] * (new_direction - self.current_direction)
-			self.log(f'adjustment_steps={adjustment_steps}', 10)
-			self.xstepper.turn(steps=adjustment_steps, count=False)
-			self.current_direction = new_direction
-			
-			time.sleep(self.config['pen_lazy_sleep'])
-		
-		self.log(f'line to steps: {xsteps}:{ysteps}')
-		self.steps_to(xsteps, ysteps)
-		
-		if move: self.pendown()
-		
-	def move_to(self, xpercent: float, ypercent: float):
+	def move_to(self, xunit: float, yunit: float):
 		self.line_to(xpercent, ypercent, move=True)
 		
+	def x_stroke_steps(self) = self.xstepper.distance_to_steps(self.config['pen_stroke_width'])
+	def y_stroke_steps(self) = 50 #TODO!
+		
 	def circle(self, **kwargs):
-		xpos = kwargs.get('xpos', self.x_pos())
-		ypos = kwargs.get('ypos', self.y_pos())
-		self.line_to(xpos, ypos)
+		xpos_p = kwargs.get('xpos', self.x_pos())
+		ypos_p = kwargs.get('ypos', self.y_pos())
 		
 		xrad = kwargs.get('rad', 100)
 		yrad = kwargs.get('yrad', xrad)
+		
+		xpos = kwargs.get('xcenter', 0) * xrad + xpos_p
+		ypos = kwargs.get('ycenter', 0) * yrad + ypos_p
+		
 		res = kwargs.get('res', 4)
 		
-		self.log(f'drawing circle with args {kwargs} on pos {self.pos_to_string()}', 10)
+		depthspace = "  " * kwargs.get('depth', 0)
+		colors     = kwargs.get('colors', [self.current_color])
+		colorindex = kwargs.get('colorindex', 0)
+		
+		self.change_color(colors[colorindex])
+		
+		self.log(f'{depthspace}drawing circle with args {kwargs} on pos {self.pos_to_string()}', 10)
 				
 		for r in range(res+1):
 			angle = r / res * 2 * math.pi
 			new_xpos = round(xpos + math.cos(angle) * xrad)
 			new_ypos = round(ypos + math.sin(angle) * yrad)
-			self.log(f'index={r} angle={angle}:{angle/math.pi * 180} cos={math.cos(angle)} sin={math.sin(angle)} newx={new_xpos} newy={new_ypos}')
+			self.log(f'{depthspace}index={r} angle={angle}:{angle/math.pi * 180} cos={math.cos(angle)} sin={math.sin(angle)} newx={new_xpos} newy={new_ypos}')
 			
 			self.line_to(new_xpos, new_ypos, move=(r == 0), step=True)
-						
-		self.move_to(xpos, ypos)
+			
+		if kwargs.get('fill', False):
+		    sub_steps_x = kwargs.get('sub_steps_x', self.x_stroke_steps()) # getting pen stroke smaller
+		    sub_steps_y = kwargs.get('sub_steps_y', self.y_stroke_steps()) # getting pen stroke smaller
+		    new_xrad = xrad - sub_steps_x
+		    new_yrad = yrad - sub_steps_y
+		    
+		    if new_xrad > 0 and new_yrad > 0:
+		        new_kwargs = dict(kwargs)
+		        
+		        new_kwargs.update({
+		            'rad': new_xrad, 
+		            'yrad': new_yrad, 
+		            'depth': depth + 1,
+		            'xcenter': -1, # the circle is left placed
+		            'colors': colors,
+		            'colorindex': colorindex + 1 % len(colors)
+	            })
+	            
+		        self.circle(**new_kwargs) # recursive call
+		        
+		        
 		
 	def penup(self):   self.set_pen_up(True)
 	def pendown(self): self.set_pen_up(False)
@@ -235,19 +270,20 @@ class EasterControler:
 	def change_color(self, color: str):
 		self.log(f"Changing color to {color}...", 5)
 		
-		pos = self.config['color_pos'][color]
+		current_pos = self.config['color_pos'][self.current_color]
+		new_pos     = self.config['color_pos'][color]
 		
-		if (pos != self.current_penhole):
+		if (current_pos != new_pos):
 			self.penup()
 			
-			distance = (pos - self.current_penhole) * self.config['color_distance']
+			distance = (pos - current_pos) * self.config['color_distance']
 			steps = self.zstepper.distance_to_steps(distance)
 			
 			self.log(f"distance: {distance}mm")
 			self.log(f"steps: {steps}x")
 			
 			self.zstepper.turn(steps=steps)
-			self.current_penhole = pos
+			self.current_color = color
 			
 			self.pendown()
 			
