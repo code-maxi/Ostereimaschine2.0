@@ -32,20 +32,21 @@ defaultEasterControlerConfig = {
     
     'egg_length': 58.5,
     'egg_height': 41,
-    'egg_use_percent': 50,
+    'egg_use_percent': 70,
     
     'max_stepper_speed': 0.002,
     
     'color_pos': {
-        'black': 1,
-        'red': 2,
-        'green': 3,
-        'blue': 4,
-        'orange': 5
+        'black': 0,
+        'red': 1,
+        'green': 2,
+        'blue': 3,
+        'orange': 4
     },
-    'change_color_steps': 50,
+    
+    'change_color_steps': 888,
     'start_color': 'blue',
-    'color_distance': 10.8,
+    #'color_distance': 10.8,
     
     'penup_offset': 0.25,
     'penup_sleep': 0.5,
@@ -54,6 +55,7 @@ defaultEasterControlerConfig = {
     'pen_lazy_sleep': 0.05,
     'pen_stroke_width': 1,
     
-    'simulator_window_size': 0.2,
+    'simulator_window_width': 1000,
+    'simulator_window_height': 600,
     'simulator_on': True
 }

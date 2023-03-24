@@ -100,58 +100,6 @@ class EasterControler(simulator.EasterSimulator):
     def x_stroke_steps(self) = self.xstepper.distance_to_steps(self.config['pen_stroke_width'])
     def y_stroke_steps(self) = round(self.config['pen_stroke_width'] / (self.config['egg_height'] * math.pi) * self.ystepper.steps_of_turn()) #TODO!
         
-    def circle(self, **kwargs):
-        xpos_p = kwargs.get('xpos', self.x_pos())
-        ypos_p = kwargs.get('ypos', self.y_pos())
-        
-        xrad = kwargs.get('rad', 100)
-        yrad = kwargs.get('yrad', xrad)
-        
-        xpos = kwargs.get('xcenter', 0) * xrad + xpos_p
-        ypos = kwargs.get('ycenter', 0) * yrad + ypos_p
-        
-        res = kwargs.get('res', 4)
-        
-        depth = kwargs.get('depth', 0)
-        depthspace = "  " * depth 
-        colors     = kwargs.get('colors', [self.current_color])
-        colorindex = kwargs.get('colorindex', 0)
-        
-        self.log(f'{depthspace}drawing circle with args {kwargs}', 10)
-        self.log(f'{depthspace}using color {colors[colorindex]}', 10)
-
-        self.change_color(colors[colorindex])
-
-        for r in range(res+1):
-            angle = r / res * 2 * math.pi
-            new_xpos = round(xpos + math.cos(angle) * xrad)
-            new_ypos = round(ypos + math.sin(angle) * yrad)
-            self.log(f'{depthspace}index={r} angle={angle}:{angle/math.pi * 180} cos={math.cos(angle)} sin={math.sin(angle)} newx={new_xpos} newy={new_ypos}')
-            
-            self.go_to(new_xpos, new_ypos, move=(r == 0), step=True)
-            
-        if kwargs.get('fill', False):
-            sub_steps_x = kwargs.get('sub_steps_x', self.x_stroke_steps()) # getting pen stroke smaller
-            sub_steps_y = kwargs.get('sub_steps_y', self.y_stroke_steps()) # getting pen stroke smaller
-            new_xrad = xrad - sub_steps_x
-            new_yrad = yrad - sub_steps_y
-            max_depth = kwargs.get('maxdepth', sys.maxsize) # getting pen stroke smaller
-            
-            if new_xrad > 0 and new_yrad > 0 and depth < max_depth:
-                new_kwargs = dict(kwargs)
-                
-                new_kwargs.update({
-                    'rad': new_xrad, 
-                    'yrad': new_yrad, 
-                    'depth': depth + 1,
-                    'xcenter': -1, # the circle is left placed
-                    'colors': colors,
-                    'colorindex': colorindex + 1 % len(colors)
-                })
-                
-                self.circle(**new_kwargs) # recursive call
-                
-        
     def penup(self):   self.set_pen_up(True)
     def pendown(self): self.set_pen_up(False)
     
@@ -165,26 +113,19 @@ class EasterControler(simulator.EasterSimulator):
         time.sleep(self.config.get('penup_sleep', 0))
         
     def change_color(self, color: str):
-        self.log(f"Changing color to {color}...", 5)
-        
         current_pos = self.config['color_pos'][self.current_color]
         new_pos     = self.config['color_pos'][color]
         
-        if (current_pos != new_pos):
+        if current_pos != new_pos:
             self.penup()
             
-            distance = (pos - current_pos) * self.config['color_distance']
-            steps = self.zstepper.distance_to_steps(distance)
-            
-            self.log(f"distance: {distance}mm")
+            steps = (pos - current_pos) * self.config['change_color_steps']
             self.log(f"steps: {steps}x")
-            
             self.zstepper.turn(steps=steps)
-            self.current_color = color
             
             self.pendown()
             
-            return steps
+        super().change_color(color)
     
     def cleanup(self):
         self.log('cleanup', 10)
@@ -196,80 +137,20 @@ class EasterControler(simulator.EasterSimulator):
         
         GPIO.cleanup()
         
-    def pos_to_string(self):
-        dp = 2
-        xsteps = round(self.x_pos(), dp)
-        ysteps = round(self.y_pos(), dp)
-        xdistance = round(self.xstepper.steps_to_distance(), dp)
-        xpercent = round(self.x_percent(), dp)
-        ypercent = round(self.y_percent(), dp)
-        return f"({xpercent}% | {ypercent}%) ({xdistance}mm | ?mm) ({xsteps}x | {ysteps}x)"
+    def on_console_input(self, typ: str, split: list<str>):
+        super().on_console_input(typ, split)
         
-    def log_pos(self): self.log(self.pos_to_string(), 10)
+        elif typ == 'penup': self.penup()
+        elif typ == 'pendown': self.pendown()
         
-    def consoleDebug(self):
-        escape = False
-                
-        while not escape:
-            inp = input('?: ')
+        elif 'stepper' in typ:
+            stepper = self.stepper(typ)
+            turn = int(split[1])
+            count = split[2] == 'True'
             
-            split = inp.split(':')
-            typ = split[0]
-            
-            try:
-                if typ == 'ex': escape = True
-            
-                elif typ == 'penup': self.penup()
-                elif typ == 'pendown': self.pendown()
-                
-                elif 'stepper' in typ:
-                    stepper = self.stepper(typ)
-                    turn = int(split[1])
-                    count = split[2] == 'True'
-                    
-                    self.log(f'{stepper} turns {turn} count {count}', 5)
-                    stepper.turn(steps=int(turn), count=count)
-                    self.log(f'pos: {stepper.pos()}', 5)
-                    
-                elif typ == 'color':
-                    steps = self.change_color(split[1])
-                    self.log(f'change color steps: {steps}', 5)
-                    
-                elif typ == 'lineto' or typ == 'moveto':
-                    x = float(split[1])
-                    y = float(split[2])
-                    
-                    lw = split[3] == 'True'
-                    
-                    self.log(f'line to ({x}|{y}), long={lw}', 5)
-                    
-                    if typ == 'lineto': self.go_to(x, y, long=lw)
-                    if typ == 'moveto': self.go_to(x, y, move=True)
-                    
-                elif typ == 'grid':
-                    for x in range(-50, 50, 10):
-                        print(f'x = {x}%: y = ', end='')
-                        for y in range(10, 100, 10):
-                            print(f'{y}% ', end='')
-                            self.go_to(x,y, move=True)
-                        print('')    
-                        
-                elif typ == 'pos': self.log_pos()
-                elif typ == 'caliber': self.log(f"{self.y_caliber()}", 10)
-                
-                elif typ == 'circle':
-                    res = int(split[1])
-                    rad = int(split[2])
-                    self.circle(rad=rad, yrad=round(2/5*rad), res=res)
-                    
-                else: self.log(f'Unbekannter typ "{typ}".', 10)
-            
-            except:
-                self.log(f'ERROR:', 10)
-                traceback.print_exc()
-                
-        self.cleanup()
-        exit(0)
+            self.log(f'{stepper} turns {turn} count {count}', 5)
+            stepper.turn(steps=int(turn), count=count)
+            self.log(f'pos: {stepper.pos()}', 5)
         
 controller = EasterControler({})
 controller.consoleDebug()
