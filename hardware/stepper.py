@@ -33,13 +33,8 @@ class EasterStepper:
         for pin in self.config['motor_pins']: GPIO.setup(pin, GPIO.OUT)
         self.setPinsLow()
         
-    def distance_to_steps(self, millimeters: float):
-        return round(millimeters * self.config['steps_per_millimeter'])
-    
-    def steps_to_distance(self, **kwargs):
-        return kwargs.get('steps', self.pos()) / self.config['steps_per_millimeter']
-        
     def steps_of_turn(self): return self.config['steps_of_turn']
+    def velocity(self): return self.config['steps_per_millimeter']
     def pos(self): return self.step_pos
     def modulo_pos(self): return em.modulo(self.step_pos, self.steps_of_turn())
     

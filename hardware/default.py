@@ -12,7 +12,7 @@ defaultEasterControlerConfig = {
         #'wheel_radius': 7.65,
         'name': 'X-Stepper',
         'mirror-inverted': True,
-        'steps_per_millimeter': 8 # TODO!
+        'steps_per_millimeter': 92 # Exact: 91.74311926605505
     },
     'zstepper': {
         'motor_pins': [5,6,13,16],
@@ -56,6 +56,6 @@ defaultEasterControlerConfig = {
     'pen_stroke_width': 1,
     
     'simulator_window_width': 1000,
-    'simulator_window_height': 600,
+#    'simulator_window_height': 600,
     'simulator_on': True
 }

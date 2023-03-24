@@ -28,7 +28,7 @@ def direction(n: float): return -1 if n < 0 else (0 if n == 0 else 1)
 def rainbow_colors(l: int): 
     return ['red']*l + ['orange']*l + ['green']*l + ['blue']*l + ['black']*l
     
-def color_to_hex(color: str):
+def color_to_hex(color):
     res = None
     if   color == 'black': res = '#000'
     elif color == 'red': res = '#f00'

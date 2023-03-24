@@ -4,22 +4,29 @@ import threading
 import time
 
 class EasterCanvas:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, heightDivWidth: float, onclose):
         self.config = config
         
         self.width  = self.config['simulator_window_width']
-        self.height = self.config['simulator_window_height']
+        self.height = self.width * heightDivWidth
         self.stroke_width = self.config['pen_stroke_width'] * 4
         
         self.pen_pos = (0,0)
         self.grid_fill = '#333'
+        self.onclose = onclose
         
         self.initialize()
+        
+    def close_me(self):
+        self.onclose()
+        self.window.destroy()
+        exit(0)
         
     def initialize(self):
         self.window = tkinter.Tk()
         self.window.title('Easter Simulator')
         self.window.config(bg='#345')
+        self.window.attributes("-topmost", True)
         
         self.canvas = tkinter.Canvas(
             self.window,
@@ -27,6 +34,8 @@ class EasterCanvas:
             width=self.width,
             bg="#fff"
         )
+        self.window.protocol("WM_DELETE_WINDOW", self.close_me)
+
         self.clear()
         self.canvas.pack()
         
@@ -53,7 +62,7 @@ class EasterCanvas:
             self.canvas.create_line(
                 left_edge, ypos,
                 right_edge, ypos,  
-                width=2 if yrow == 0 else 1, fill='#000'
+                width=3 if yrow == 0 else 1, fill='#000'
             )
             self.canvas.create_text(
                 (left_edge, ypos), 
@@ -75,14 +84,14 @@ class EasterCanvas:
                 xpos, ypos, 
                 xpos + size, ypos + size,
                 fill=hex_color,
-                outline=hex_color if self.pen_color == hex_color else '#fff',
+                outline=hex_color if self.pen_color == hex_color and hex_color != None else '#fff',
                 width=10
             )
             i += 1
             
             self.canvas.update()
         
-    def set_color(self, color: str):
+    def set_color(self, color):
         self.pen_color = em.color_to_hex(color)
         self.paint_color()
         

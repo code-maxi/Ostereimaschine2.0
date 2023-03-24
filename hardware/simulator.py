@@ -25,15 +25,25 @@ class EasterSimulator:
         self.simulator_x = 0
         self.simulator_y = 0
         
+        self.ispenup = False
+        
         self.current_color = self.config['start_color']
         self.print_piority = 2
         
-        if self.config['simulator_on']: self.init_canvas()
-        
         self.log('Simulator __init__ with config: ', 10)
         
-    def init_canvas(self):
-        self.canvas = eastercanvas.EasterCanvas(self.config)
+    def canvas_close(self):
+        self.cleanup()
+        print('canvas close!')
+        
+    def gui_debug(self):
+        self.canvas = eastercanvas.EasterCanvas(self.config, self.egg_y_steps / self.egg_x_steps, self.canvas_close)
+        self.canvas.main_loop()
+        
+    def console_debug(self, **kwargs):
+        self.console_debug_thread = threading.Thread(target=self.console_debug_thread)
+        self.console_debug_thread.start()
+        if kwargs.get('wait', False) == True: self.console_debug_thread.join()
         
     def log(self, obj, *args):
         prio = em.get_save(args, 0, 0) 
@@ -86,11 +96,20 @@ class EasterSimulator:
         index = 1 if kwargs.get('long', False) == True else 0
         
         return minmax[index]
+    
+    def set_pen_up(self, up: bool):
+        self.ispenup = up
+        self.change_color(self.current_color)
+        
+    def penup(self):   self.set_pen_up(True)
+    def pendown(self): self.set_pen_up(False)
         
     def change_color(self, color: str):
         self.log(f"Changing color to {color}...", 5)
         self.current_color = color
-        if self.config['simulator_on']: self.canvas.set_color(self.current_color)
+        
+        try: self.canvas.set_color(None if self.ispenup else self.current_color)
+        except AttributeError: pass
         
     def go_to(self, xunit: float, yunit: float, **kwargs):
         move = kwargs.get('move', False)
@@ -163,9 +182,28 @@ class EasterSimulator:
                 })
                 
                 self.circle(**new_kwargs) # recursive call
+                
+    def sin_wave(self, width: int, length: int, seg_number: int, res: int):
+        old_ypos = self.y_pos()
+        old_xpos = self.x_pos()
+        seg_length = round(length / seg_number)
         
-    def on_console_input(self, typ: str, split: list[str]):
-        if typ == 'color': self.change_color(split[1])
+        for i in range(res * seg_number):
+            xpos = math.sin(i / res * math.pi * 2) * width + old_xpos
+            ypos = i / res * seg_length + old_ypos
+            self.go_to(xpos, ypos, step=True)
+        
+        
+    def on_console_input(self, typ: str, split: list):
+        print(f'simulator typ {typ}')
+        
+        if typ == 'penup': self.penup()
+        elif typ == 'pendown': self.pendown()
+        
+        elif typ == 'color': self.change_color(split[1])
+        elif typ == 'hidecolor': self.current_color = split[1]
+        
+        elif typ == 'sin': self.sin_wave(200, self.egg_y_steps, 5, 50)
             
         elif typ == 'lineto' or typ == 'moveto':
             x = float(split[1])
@@ -197,8 +235,8 @@ class EasterSimulator:
         else: return False
         
     def cleanup(self): pass
-        
-    def consoleDebug(self):
+            
+    def console_debug_thread(self):
         escape = False
         commands = []
                 
@@ -212,19 +250,20 @@ class EasterSimulator:
             
             try:
                 if typ == 'ex': escape = True
-                elif self.on_console_input(typ, split) != False: pass
-                else: raise Exception(f'Unbekannter typ "{typ}".', 10)
+                elif self.on_console_input(typ, split) == False:
+                    raise Exception(f'Unbekannter typ "{typ}".', 10)
             
             except:
                 self.log(f'ERROR:', 10)
                 traceback.print_exc()
                 
-        if self.config['simulator_on']: self.canvas.quit()
+        try: self.canvas.quit()
+        except AttributeError: pass
         
         self.cleanup()
+        time.sleep(0.5)
         exit(0)
         
 controller = EasterSimulator({})
-thread = threading.Thread(target=controller.consoleDebug)
-thread.start()
-controller.canvas.main_loop()
+controller.console_debug()
+controller.gui_debug()

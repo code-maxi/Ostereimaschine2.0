@@ -16,7 +16,6 @@ class EasterControler(simulator.EasterSimulator):
         super().__init__(config)
         
         self.pen_servo_offset = 0
-        self.ispenup = False
         self.current_direction = 0
         
         self.setup()
@@ -97,15 +96,13 @@ class EasterControler(simulator.EasterSimulator):
             
             if move: self.pendown()
         
-    def x_stroke_steps(self) = self.xstepper.distance_to_steps(self.config['pen_stroke_width'])
-    def y_stroke_steps(self) = round(self.config['pen_stroke_width'] / (self.config['egg_height'] * math.pi) * self.ystepper.steps_of_turn()) #TODO!
-        
-    def penup(self):   self.set_pen_up(True)
-    def pendown(self): self.set_pen_up(False)
+    def x_stroke_steps(self): return self.xstepper.velocity() * self.config['pen_stroke_width']
+    def y_stroke_steps(self): return round(self.config['pen_stroke_width'] / (self.config['egg_height'] * math.pi) * self.ystepper.steps_of_turn()) #TODO!
     
     def set_pen_up(self, up: bool):
+        super().set_pen_up(up)
+        
         newPos = 1 - self.pen_servo_offset - (self.config['penup_offset'] if up else 0)
-        self.ispenup = up
         
         self.log(f'penup pos: {newPos}')
         self.servo.setPos(newPos)
@@ -119,7 +116,7 @@ class EasterControler(simulator.EasterSimulator):
         if current_pos != new_pos:
             self.penup()
             
-            steps = (pos - current_pos) * self.config['change_color_steps']
+            steps = (new_pos - current_pos) * self.config['change_color_steps']
             self.log(f"steps: {steps}x")
             self.zstepper.turn(steps=steps)
             
@@ -137,13 +134,10 @@ class EasterControler(simulator.EasterSimulator):
         
         GPIO.cleanup()
         
-    def on_console_input(self, typ: str, split: list<str>):
-        super().on_console_input(typ, split)
+    def on_console_input(self, typ: str, split: list):
+        print(f'coltroler typ {typ}')
         
-        elif typ == 'penup': self.penup()
-        elif typ == 'pendown': self.pendown()
-        
-        elif 'stepper' in typ:
+        if 'stepper' in typ:
             stepper = self.stepper(typ)
             turn = int(split[1])
             count = split[2] == 'True'
@@ -151,7 +145,10 @@ class EasterControler(simulator.EasterSimulator):
             self.log(f'{stepper} turns {turn} count {count}', 5)
             stepper.turn(steps=int(turn), count=count)
             self.log(f'pos: {stepper.pos()}', 5)
-        
+            
+        else: return super().on_console_input(typ, split)
+                
 controller = EasterControler({})
-controller.consoleDebug()
+controller.console_debug()
+controller.gui_debug()
 
