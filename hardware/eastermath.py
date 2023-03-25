@@ -1,3 +1,5 @@
+import math
+
 def modulo(pn: float, z: float):
     n = pn
     while n >= z: n -= z
@@ -32,7 +34,13 @@ def color_to_hex(color):
     res = None
     if   color == 'black': res = '#000'
     elif color == 'red': res = '#f00'
-    elif color == 'green': res = '#0f0'
+    elif color == 'green': res = '#008000'
     elif color == 'blue': res = '#00f'
     elif color == 'orange': res = '#ffa500'
     return res
+    
+def vec_add(v1, v2): return (v1[0] + v2[0], v1[1] + v2[1])
+def vec_sub(v1, v2): return (v1[0] - v2[0], v1[1] - v2[1])
+def vec_neg(v1): return (-v1[0], -v1[1])
+def vec_mul(v1, s): return (v1[0] * s, v1[1] * s)
+def vec_len(v1): return math.sqrt(v1[0] ** 2 + v1[1] ** 2)

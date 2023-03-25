@@ -95,9 +95,6 @@ class EasterControler(simulator.EasterSimulator):
             self.steps_to(xsteps, ysteps)
             
             if move: self.pendown()
-        
-    def x_stroke_steps(self): return self.xstepper.velocity() * self.config['pen_stroke_width']
-    def y_stroke_steps(self): return round(self.config['pen_stroke_width'] / (self.config['egg_height'] * math.pi) * self.ystepper.steps_of_turn()) #TODO!
     
     def set_pen_up(self, up: bool):
         super().set_pen_up(up)

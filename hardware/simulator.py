@@ -36,8 +36,11 @@ class EasterSimulator:
         self.cleanup()
         print('canvas close!')
         
-    def gui_debug(self):
+    def gui_debug(self, *args):
         self.canvas = eastercanvas.EasterCanvas(self.config, self.egg_y_steps / self.egg_x_steps, self.canvas_close)
+        callback = em.get_save(args, 0, None)
+        if callback != None:
+            threading.Thread(target=callback).start()
         self.canvas.main_loop()
         
     def console_debug(self, **kwargs):
@@ -51,17 +54,18 @@ class EasterSimulator:
         
     def pos_to_string(self):
         dp = 1
-        xsteps = round(self.x_pos(), dp)
-        ysteps = round(self.y_pos(), dp)
+        xsteps = round(self.x_pos())
+        ysteps = round(self.y_pos())
         xdistance = round(self.x_pos() / self.x_velocity, dp)
         xpercent = round(self.x_percent() * 100, dp)
         ypercent = round(self.y_percent() * 100, dp)
-        return f"({xpercent}% | {ypercent}%) ({xdistance}mm | ?mm) ({xsteps}x | {ysteps}x)"
+        return f"({xpercent: 7.1f}% | {ypercent: 4.1f}%)_({xdistance: 6.1f}mm |    ?mm)_({xsteps: 7}x | {ysteps: 4}x)"
         
     def log_pos(self): self.log(self.pos_to_string(), 10)
         
     def x_pos(self): return self.simulator_x
     def y_pos(self): return em.modulo(self.simulator_y, self.egg_y_steps)
+    def xy_pos(self): return (self.x_pos(), self.y_pos())
     
     def set_x_pos(self, x: float): self.simulator_x = x
     def set_y_pos(self, y: float): self.simulator_y = y
@@ -103,6 +107,9 @@ class EasterSimulator:
         
     def penup(self):   self.set_pen_up(True)
     def pendown(self): self.set_pen_up(False)
+    
+    def x_stroke_steps(self): return self.x_velocity * self.config['pen_stroke_width']
+    def y_stroke_steps(self): return round(self.config['pen_stroke_width'] / (self.config['egg_height'] * math.pi) * self.egg_y_steps) #TODO!
         
     def change_color(self, color: str):
         self.log(f"Changing color to {color}...", 5)
@@ -111,26 +118,46 @@ class EasterSimulator:
         try: self.canvas.set_color(None if self.ispenup else self.current_color)
         except AttributeError: pass
         
-    def go_to(self, xunit: float, yunit: float, **kwargs):
+    def update_canvas_info(self, info: dict):
+        try: self.canvas.update_info(info)
+        except AttributeError: pass
+        
+    def go_to(self, pxunit: float, pyunit: float, **kwargs):
         move = kwargs.get('move', False)
         step_unit = kwargs.get('step', False)
+        
+        xunit = pxunit + self.x_pos() if kwargs.get('rel', False) else pxunit
+        yunit = pyunit + self.y_pos() if kwargs.get('rel', False) else pyunit
         
         xsteps = self.x_delta_steps(xunit, step=step_unit)
         ysteps = self.y_delta_steps(yunit, step=step_unit, long=kwargs.get('long', False))
         
         self.log(f'xstepsr={xsteps / self.egg_border_steps} ystepsr={ysteps / self.egg_y_steps} long={kwargs.get("long", False)}')
         
-        try:
-            self.canvas.go_to((
-                xsteps / self.egg_x_steps,
-                ysteps / self.egg_y_steps
-            ), move)
-        except AttributeError: pass
-            
         self.set_x_pos(self.x_pos() + xsteps)
         self.set_y_pos(self.y_pos() + ysteps)
         
+        try:
+            string_pos = self.pos_to_string().split('_')
+            self.canvas.go_to((
+                xsteps / self.egg_x_steps,
+                ysteps / self.egg_y_steps
+            ), move, {
+                'p1': string_pos[0],
+                'p2': string_pos[1],
+                'p3': string_pos[2]
+            }, kwargs.get('info', False))
+        except AttributeError: pass
+        
         return (xsteps, ysteps)
+        
+    def step_to(self, pos, **kwargs):
+        newkwargs = dict(kwargs)
+        newkwargs.update({'step':True})
+        self.go_to(pos[0], pos[1], **newkwargs)
+        
+    def go_to_multiple(poses, **kwargs):
+        for pos in poses: self.go_to(pos[0], pos[1], **kwargs)
         
     def circle(self, **kwargs):
         xpos_p = kwargs.get('xpos', self.x_pos())
@@ -173,26 +200,30 @@ class EasterSimulator:
                 new_kwargs = dict(kwargs)
                 
                 new_kwargs.update({
-                    'rad': new_xrad, 
-                    'yrad': new_yrad, 
+                    'rad': new_xrad,
+                    'yrad': new_yrad,
+                    'xpos': self.x_pos() - sub_steps_x,
                     'depth': depth + 1,
                     'xcenter': -1, # the circle is left placed
                     'colors': colors,
-                    'colorindex': colorindex + 1 % len(colors)
+                    'colorindex': (colorindex + 1) % len(colors)
                 })
                 
                 self.circle(**new_kwargs) # recursive call
                 
-    def sin_wave(self, width: int, length: int, seg_number: int, res: int):
+    def sin_wave(self, **kwargs):
+        width = kwargs.get('width', 100)
+        seg_number = kwargs.get('seg_number', 5)
+        res = kwargs.get('res', 10)
+        
         old_ypos = self.y_pos()
         old_xpos = self.x_pos()
-        seg_length = round(length / seg_number)
+        seg_length = round(kwargs.get('length', self.egg_y_step) / seg_number)
         
         for i in range(res * seg_number):
             xpos = math.sin(i / res * math.pi * 2) * width + old_xpos
             ypos = i / res * seg_length + old_ypos
             self.go_to(xpos, ypos, step=True)
-        
         
     def on_console_input(self, typ: str, split: list):
         print(f'simulator typ {typ}')
@@ -211,8 +242,8 @@ class EasterSimulator:
             
             lw = em.get_save(split, 3, 'False') == 'True'
             
-            if typ == 'lineto': self.go_to(x, y, long=lw)
-            if typ == 'moveto': self.go_to(x, y, move=True)
+            if typ == 'lineto': self.go_to(x, y, long=lw, info=True)
+            if typ == 'moveto': self.go_to(x, y, move=True, info=True)
             
             self.log(f'{typ} => {self.pos_to_string()}', 10)
             
@@ -228,9 +259,20 @@ class EasterSimulator:
         elif typ == 'caliber': self.log(f"{self.y_caliber()}", 10)
         
         elif typ == 'circle':
-            res = int(split[1])
-            rad = int(split[2])
-            self.circle(rad=rad, yrad=round(2/5*rad), res=res)
+            res = int(em.get_save(split, 1, 100))
+            rad = int(em.get_save(split, 2, 1000))
+            fill = int(em.get_save(split, 3, 1))
+            rainbow = int(em.get_save(split, 1, 1))
+            colors = em.rainbow_colors(rainbow) if rainbow > 0 else [self.current_color]
+            print(colors)
+            
+            self.circle(
+                rad=rad, 
+                yrad=round(2/5*rad), 
+                res=res, 
+                fill = fill == 1, 
+                colors = colors
+            )
             
         else: return False
         
@@ -263,7 +305,9 @@ class EasterSimulator:
         self.cleanup()
         time.sleep(0.5)
         exit(0)
-        
+
+''''
 controller = EasterSimulator({})
 controller.console_debug()
 controller.gui_debug()
+'''
