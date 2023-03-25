@@ -24,6 +24,7 @@ class EasterSimulator:
         
         self.simulator_x = 0
         self.simulator_y = 0
+        self.simulator_speed = self.config['simulator_start_speed']
         
         self.ispenup = False
         
@@ -59,13 +60,15 @@ class EasterSimulator:
         xdistance = round(self.x_pos() / self.x_velocity, dp)
         xpercent = round(self.x_percent() * 100, dp)
         ypercent = round(self.y_percent() * 100, dp)
-        return f"({xpercent: 7.1f}% | {ypercent: 4.1f}%)_({xdistance: 6.1f}mm |    ?mm)_({xsteps: 7}x | {ysteps: 4}x)"
+        return f"({xpercent: 5.1f}% | {ypercent: 5.1f}%)_({xdistance: 5.1f}mm|    ?mm)_({xsteps: 5}x | {ysteps: 5}x)"
         
     def log_pos(self): self.log(self.pos_to_string(), 10)
         
     def x_pos(self): return self.simulator_x
     def y_pos(self): return em.modulo(self.simulator_y, self.egg_y_steps)
     def xy_pos(self): return (self.x_pos(), self.y_pos())
+    
+    def get_simulator_speed(self): return self.simulator_speed
     
     def set_x_pos(self, x: float): self.simulator_x = x
     def set_y_pos(self, y: float): self.simulator_y = y
@@ -104,6 +107,7 @@ class EasterSimulator:
     def set_pen_up(self, up: bool):
         self.ispenup = up
         self.change_color(self.current_color)
+        time.sleep(self.get_simulator_speed() * 4)
         
     def penup(self):   self.set_pen_up(True)
     def pendown(self): self.set_pen_up(False)
@@ -122,13 +126,21 @@ class EasterSimulator:
         try: self.canvas.update_info(info)
         except AttributeError: pass
         
+    def canvas_info_pos(self):
+        string_pos = self.pos_to_string().split('_')
+        return {
+            'p1': string_pos[0],
+            'p2': string_pos[1],
+            'p3': string_pos[2]
+        }
+        
     def go_to(self, pxunit: float, pyunit: float, **kwargs):
         move = kwargs.get('move', False)
         step_unit = kwargs.get('step', False)
         
         xunit = pxunit + self.x_pos() if kwargs.get('rel', False) else pxunit
         yunit = pyunit + self.y_pos() if kwargs.get('rel', False) else pyunit
-        
+                
         xsteps = self.x_delta_steps(xunit, step=step_unit)
         ysteps = self.y_delta_steps(yunit, step=step_unit, long=kwargs.get('long', False))
         
@@ -137,17 +149,20 @@ class EasterSimulator:
         self.set_x_pos(self.x_pos() + xsteps)
         self.set_y_pos(self.y_pos() + ysteps)
         
-        try:
-            string_pos = self.pos_to_string().split('_')
-            self.canvas.go_to((
-                xsteps / self.egg_x_steps,
-                ysteps / self.egg_y_steps
-            ), move, {
-                'p1': string_pos[0],
-                'p2': string_pos[1],
-                'p3': string_pos[2]
-            }, kwargs.get('info', False))
-        except AttributeError: pass
+        if abs(xsteps) > 0 or abs(ysteps) > 0:
+            try:
+                self.canvas.go_to((
+                    xsteps / self.egg_x_steps,
+                    ysteps / self.egg_y_steps
+                ), move, self.canvas_info_pos(), kwargs.get('info', False))
+                
+                speed = self.get_simulator_speed()
+                if speed > 0:
+                    length = em.vec_len((xsteps, ysteps))
+                    sleep = length / 1000 * speed
+                    time.sleep(sleep)
+                    
+            except AttributeError: pass
         
         return (xsteps, ysteps)
         
@@ -218,7 +233,7 @@ class EasterSimulator:
         
         old_ypos = self.y_pos()
         old_xpos = self.x_pos()
-        seg_length = round(kwargs.get('length', self.egg_y_step) / seg_number)
+        seg_length = round(kwargs.get('length', self.egg_y_steps) / seg_number)
         
         for i in range(res * seg_number):
             xpos = math.sin(i / res * math.pi * 2) * width + old_xpos

@@ -10,7 +10,7 @@ class EasterCanvas:
         
         self.width  = self.config['simulator_window_width']
         self.height = self.width * heightDivWidth
-        self.stroke_width = self.config['pen_stroke_width'] * 4
+        self.stroke_width = self.config['pen_stroke_width'] * 4 * 2
         
         self.pen_pos = (0,0)
         self.grid_fill = '#333'

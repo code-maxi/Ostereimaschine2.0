@@ -55,7 +55,8 @@ defaultEasterControlerConfig = {
     'pen_lazy_sleep': 0.05,
     'pen_stroke_width': 1,
     
-    'simulator_window_width': 1000,
+    'simulator_window_width': 1200,
 #    'simulator_window_height': 600,
-    'simulator_on': True
+    'simulator_on': True,
+    'simulator_start_speed': 0.1 # sleep per 1000 steps
 }

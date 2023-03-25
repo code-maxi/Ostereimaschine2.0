@@ -43,6 +43,8 @@ class EasterControler(simulator.EasterSimulator):
         
     def x_percent(self): return (self.x_pos() / self.egg_border_steps) * 100
     def y_percent(self): return (self.y_pos() / self.ystepper.steps_of_turn()) * 100
+    
+    def get_simulator_speed(self): return 0 # ignore simulator_speed
         
     def steps_to(self, xsteps: int, ysteps: int):
         super().steps_to(xsteps, ysteps)
@@ -72,7 +74,12 @@ class EasterControler(simulator.EasterSimulator):
             thread.join()
         
     def go_to(self, xunit: float, yunit: float, **kwargs):
-        (xsteps, ysteps) = super().go_to(xunit, yunit, **kwargs)
+        move = kwargs.get('move', False)
+        info = kwargs.get('info', False)
+    
+        new_kwargs = dict(kwargs)
+        new_kwargs.update({'info':False})
+        (xsteps, ysteps) = super().go_to(xunit, yunit, **new_kwargs)
         
         if xsteps != 0 or ysteps != 0: 
             if move:
@@ -95,6 +102,7 @@ class EasterControler(simulator.EasterSimulator):
             self.steps_to(xsteps, ysteps)
             
             if move: self.pendown()
+            if info: self.update_canvas_info(self.canvas_info_pos())
     
     def set_pen_up(self, up: bool):
         super().set_pen_up(up)
