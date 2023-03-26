@@ -46,9 +46,7 @@ class EasterControler(simulator.EasterSimulator):
     
     def get_simulator_speed(self): return 0 # ignore simulator_speed
         
-    def steps_to(self, xsteps: int, ysteps: int):
-        super().steps_to(xsteps, ysteps)
-        
+    def steps_to(self, xsteps: int, ysteps: int):        
         if xsteps != 0 or ysteps != 0:
             steps_minmax   = em.abs_minmax(xsteps, ysteps)
             isx_max        = steps_minmax[1] == xsteps
@@ -152,8 +150,3 @@ class EasterControler(simulator.EasterSimulator):
             self.log(f'pos: {stepper.pos()}', 5)
             
         else: return super().on_console_input(typ, split)
-                
-controller = EasterControler({})
-controller.console_debug()
-controller.gui_debug()
-

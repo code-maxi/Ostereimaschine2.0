@@ -30,7 +30,7 @@ class EasterSimulator:
         
         self.current_color = self.config['start_color']
         self.print_piority = 2
-        
+                
         self.log('Simulator __init__ with config: ', 10)
         
     def canvas_close(self):
@@ -38,7 +38,11 @@ class EasterSimulator:
         print('canvas close!')
         
     def gui_debug(self, *args):
-        self.canvas = eastercanvas.EasterCanvas(self.config, self.egg_y_steps / self.egg_x_steps, self.canvas_close)
+        self.canvas = eastercanvas.EasterCanvas(
+            self.config,
+            self.egg_y_steps / self.egg_x_steps,
+            self.canvas_close
+        )
         callback = em.get_save(args, 0, None)
         if callback != None:
             threading.Thread(target=callback).start()
@@ -51,7 +55,7 @@ class EasterSimulator:
         
     def log(self, obj, *args):
         prio = em.get_save(args, 0, 0) 
-        if prio >= self.print_piority: print(colors.green('EasterControler: ' + str(obj)))
+        if prio >= self.print_piority: print(colors.green('EasterSimulator: ' + str(obj)))
         
     def pos_to_string(self):
         dp = 1
@@ -245,9 +249,13 @@ class EasterSimulator:
         
         if typ == 'penup': self.penup()
         elif typ == 'pendown': self.pendown()
+        elif typ == 'pentoggle': self.set_pen_up(not self.ispenup)
         
         elif typ == 'color': self.change_color(split[1])
-        elif typ == 'hidecolor': self.current_color = split[1]
+        elif typ == 'hidecolor':
+            self.current_color = split[1]
+            try: self.canvas.set_color(None if self.ispenup else self.current_color)
+            except AttributeError: pass
         
         elif typ == 'sin': self.sin_wave(200, self.egg_y_steps, 5, 50)
             

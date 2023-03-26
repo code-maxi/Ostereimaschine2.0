@@ -1,18 +1,18 @@
-#from controller import EasterController
+from controller import EasterControler
 from simulator import EasterSimulator
 import eastermath as em
 import time
 import math
 
-ct = EasterSimulator({'simulator_start_speed': 0.0})
+ct = EasterSimulator({'simulator_start_speed': 0.0, 'start_color': 'green', 'penup_offset': 0.25})
 
 def act():
-    iterations = 4
+    iterations = 10
     
     star_height = ct.egg_y_steps / iterations / 2
     star_width = ct.egg_x_steps * 0.1
-    star_fill = 4
-    star_fac = 0.2
+    star_fill = 1
+    star_fac = 0.3
     
     star_wsub = ct.x_stroke_steps()
     star_hsub = ct.y_stroke_steps()
@@ -25,6 +25,7 @@ def act():
     left_line = -30
     
     egg_res = 40
+    egg_fill = 0
     egg_wsub = star_wsub
     egg_hsub = star_hsub * 2
     egg_width = round(ct.egg_x_steps * 0.08)
@@ -105,7 +106,7 @@ def act():
             for s in range(iterations):
                 ct.change_color(colors[s % len(colors)])
                 ct.update_canvas_info({'star': f'egg   = {s} | {d}'})
-                egg(egg_width, egg_height, 3)
+                egg(egg_width, egg_height, egg_fill)
         
     stars()
     eggs()

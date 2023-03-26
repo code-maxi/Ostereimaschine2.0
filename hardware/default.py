@@ -48,7 +48,7 @@ defaultEasterControlerConfig = {
     'start_color': 'blue',
     #'color_distance': 10.8,
     
-    'penup_offset': 0.25,
+    'penup_offset': 0.5,
     'penup_sleep': 0.5,
     
     'pen_lazy': 25,

@@ -41,7 +41,7 @@ class EasterCanvas:
         self.clear()
         self.canvas.pack()
         
-        self.set_color('black')
+        self.set_color(self.config['start_color'])
         
     def main_loop(self): self.window.mainloop()
     
@@ -77,8 +77,8 @@ class EasterCanvas:
         size = 30
         offset = 10
         
-        i = 0
         for color in self.config['color_pos']:
+            i = len(self.config['color_pos']) - 1 - self.config['color_pos'][color]
             xpos = offset
             ypos = (offset + size) * i + offset
             hex_color = em.color_to_hex(color)
@@ -89,7 +89,6 @@ class EasterCanvas:
                 outline=hex_color if self.pen_color == hex_color and hex_color != None else '#fff',
                 width=10
             )
-            i += 1
             
     def paint_info(self):
         spacing = 10
