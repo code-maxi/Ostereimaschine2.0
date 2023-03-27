@@ -27,12 +27,12 @@ defaultEasterControlerConfig = {
         'frequenz': 50,
         '0DC': 2.5,
         '180DC': 12.5,
-        'startPos': 1
+        'startPos': 0.75
     },
     
     'egg_length': 58.5,
     'egg_height': 41,
-    'egg_use_percent': 70,
+    'egg_use_percent': 60,
     
     'max_stepper_speed': 0.002,
     
@@ -48,14 +48,16 @@ defaultEasterControlerConfig = {
     'start_color': 'blue',
     #'color_distance': 10.8,
     
-    'penup_offset': 0.5,
-    'penup_sleep': 0.5,
+    'pendown_pos': 0.75,
+    'penup_pos': 0.5,
+    'penup_sleep': 0.25,
     
-    'pen_lazy': 25,
+    'pen_lazy': 30,
     'pen_lazy_sleep': 0.05,
     'pen_stroke_width': 1,
     
-    'simulator_window_width': 1200,
+    'simulator_window_height': 1080,
+    'simulator_window_width': 900,
 #    'simulator_window_height': 600,
     'simulator_on': True,
     'simulator_start_speed': 0.1 # sleep per 1000 steps

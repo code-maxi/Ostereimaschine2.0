@@ -22,10 +22,8 @@ class EasterServo:
     # sets the position of the stepper between 0 and 2pi degrees (0 <= pos <= 2pi)
     def setPos(self, pos: float):
         newpos = self.newPos(pos)
-        if newpos == -1: return False
-        else:
-             self.pin.ChangeDutyCycle(newpos)
-             return True
+        if newpos != -1: self.pin.ChangeDutyCycle(newpos)
+        return newpos
 
     def stopPWM(self):
         self.pin.stop()

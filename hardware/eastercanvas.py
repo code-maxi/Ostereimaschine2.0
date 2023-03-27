@@ -1,3 +1,4 @@
+from screeninfo import get_monitors
 import eastermath as em
 import tkinter
 import tkinter.font
@@ -5,17 +6,21 @@ import threading
 import time
 
 class EasterCanvas:
-    def __init__(self, config: dict, heightDivWidth: float, onclose):
+    def __init__(self, config: dict, onclose):
         self.config = config
         
+        self.height  = self.config['simulator_window_height']
         self.width  = self.config['simulator_window_width']
-        self.height = self.width * heightDivWidth
+        
         self.stroke_width = self.config['pen_stroke_width'] * 4 * 2
         
         self.pen_pos = (0,0)
         self.grid_fill = '#333'
+        self.background = '#eee'
         self.onclose = onclose
         self.info = {}
+        self.fullscreen = True
+        self.infotext = None
         
         self.initialize()
         
@@ -24,11 +29,17 @@ class EasterCanvas:
         self.window.destroy()
         exit(0)
         
+    def toggle_fullscreen(self):
+        self.fullscreen = not self.fullscreen
+        print('fullscreen toggled')
+        self.window.attributes("-fullscreen", self.fullscreen)
+        
     def initialize(self):
         self.window = tkinter.Tk()
         self.window.title('Easter Simulator')
         self.window.config(bg='#345')
         self.window.attributes("-topmost", True)
+        self.toggle_fullscreen()
         
         self.canvas = tkinter.Canvas(
             self.window,
@@ -37,8 +48,9 @@ class EasterCanvas:
             bg="#fff"
         )
         self.window.protocol("WM_DELETE_WINDOW", self.close_me)
+        self.window.bind('<Control-e>', lambda event: self.toggle_fullscreen())
 
-        self.clear()
+        self.clear_grid()
         self.canvas.pack()
         
         self.set_color(self.config['start_color'])
@@ -48,8 +60,11 @@ class EasterCanvas:
     def y_on_grid(self, y: float): return (1 - y) * self.height
     def x_on_grid(self, x: float): return (x * (self.config['egg_use_percent']/100) + 0.5) * self.width
         
-    def clear(self):
-        self.canvas.create_rectangle(0, 0, self.width, self.height, fill="#eee")
+        
+    def clear(self): self.canvas.create_rectangle(0, 0, self.width, self.height, fill=self.background)
+        
+    def clear_grid(self):
+        self.clear()
         
         for xrow in range(-5, 6):
             xpos = self.x_on_grid(xrow / 10) 
@@ -73,48 +88,78 @@ class EasterCanvas:
                 anchor=anchor
             )
             
+        if self.infotext != None:
+            self.canvas.create_text(
+                self.width / 2, self.height / 2,
+                text=str(self.infotext),
+                fill='#000',
+                anchor='n'
+            )
+            
+    def info_text(self, text):
+        print('info text')
+        self.infotext = text
+        self.clear_grid()
+        self.paint_color()
+        self.paint_info()
+            
     def paint_color(self):
         size = 30
         offset = 10
         
         for color in self.config['color_pos']:
-            i = len(self.config['color_pos']) - 1 - self.config['color_pos'][color]
-            xpos = offset
-            ypos = (offset + size) * i + offset
-            hex_color = em.color_to_hex(color)
-            self.canvas.create_rectangle(
-                xpos, ypos, 
-                xpos + size, ypos + size,
-                fill=hex_color,
-                outline=hex_color if self.pen_color == hex_color and hex_color != None else '#fff',
-                width=10
-            )
+            colorpos = self.config['color_pos'][color]
+            if colorpos != None:
+                i = len(self.config['color_pos']) - 1 - colorpos
+                xpos = offset
+                ypos = (offset + size) * i + offset
+                hex_color = em.color_to_hex(color)
+                self.canvas.create_rectangle(
+                    xpos, ypos, 
+                    xpos + size, ypos + size,
+                    fill=hex_color,
+                    outline=hex_color if self.pen_color == hex_color and hex_color != None else '#fff',
+                    width=10
+                )
             
     def paint_info(self):
         spacing = 10
         font_size = 10
         lines = self.info.values()
-        font = tkinter.font.Font(size=font_size, family="monospace") 
         
+        font = tkinter.font.Font(size=font_size, family="monospace")
         text_widths = [font.measure(s) for s in lines]
         
-        max_width = max(text_widths)
-        max_height = (font_size + spacing) * len(lines)
+        def clear_info(c):
+            c.canvas.create_rectangle(
+                c.info_xpos, c.info_ypos,
+                c.info_xpos + c.info_max_width,
+                c.info_ypos + c.info_max_height,
+                fill=c.background, width=0
+            )
+        
+        try: clear_info(self)
+        except AttributeError: pass
+        
+        self.info_max_width = max(text_widths)
+        self.info_max_height = (font_size + spacing) * len(lines)
         
         #print(f'text_widths {text_widths} | max_width {max_width} | max_height {max_height}')
         
-        xpos = self.width - max_width
-        ypos = self.height - max_height
-        self.canvas.create_rectangle(xpos, ypos, xpos + max_width, ypos + max_height, fill='#fff', outline='#fff')
+        self.info_xpos = self.width - self.info_max_width
+        self.info_ypos = self.height - self.info_max_height
+        
+        clear_info(self)
+        
         for line in lines:
             self.canvas.create_text(
-                xpos, ypos,
+                self.info_xpos, self.info_ypos,
                 text=line,
                 fill='#000',
                 font=font,
                 anchor='nw'
             )
-            ypos += font_size + spacing
+            self.info_ypos += font_size + spacing
             
     def set_color(self, color):
         self.pen_color = em.color_to_hex(color)

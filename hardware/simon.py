@@ -4,31 +4,29 @@ import eastermath as em
 import time
 import math
 
-ct = EasterSimulator({'simulator_start_speed': 0.0, 'start_color': 'green', 'penup_offset': 0.25})
-
-def act():
+def act(ct: EasterSimulator):
     iterations = 10
     
     star_height = ct.egg_y_steps / iterations / 2
-    star_width = ct.egg_x_steps * 0.1
+    star_width = ct.egg_x_steps * 0.14
     star_fill = 1
-    star_fac = 0.3
+    star_fac = 0.2
     
     star_wsub = ct.x_stroke_steps()
     star_hsub = ct.y_stroke_steps()
     
-    colors = em.rainbow_colors(1)
+    colors = ['red', 'green', 'blue']
     
     sin_seg = 15
-    sin_width = 100
+    sin_width = 300
     
     left_line = -30
     
     egg_res = 40
-    egg_fill = 0
+    egg_fill = 3
     egg_wsub = star_wsub
     egg_hsub = star_hsub * 2
-    egg_width = round(ct.egg_x_steps * 0.08)
+    egg_width = round(ct.egg_x_steps * 0.1)
     egg_height = star_height
 
     def star(w: int, h: int, fill: int, fac: float, wsub: int, hsub: int, depth: int):
@@ -86,11 +84,11 @@ def act():
             ct.update_canvas_info({})
             ct.go_to(x, 0)
             
-            ct.step_to((-sin_width * 1.5, 0),   rel=True, move=True)
-            ct.step_to((0, 0), long=True, rel=True)
+            #ct.step_to((-sin_width * 1.5, 0),   rel=True, move=True)
+            #ct.step_to((0, 0), long=True, rel=True)
             
-            ct.step_to((2*sin_width * 1.5, 0),  rel=True, move=True)
-            ct.step_to((0, 0), long=True, rel=True)
+            #ct.step_to((2*sin_width * 1.5, 0),  rel=True, move=True)
+            #ct.step_to((0, 0), long=True, rel=True)
     
     def stars():
         ct.go_to(0, 0, move=True)
@@ -111,6 +109,19 @@ def act():
     stars()
     eggs()
     pattern()
-        
-ct.console_debug()
-ct.gui_debug(act)
+
+sim = EasterSimulator(
+    {
+        'simulator_start_speed': 0.0,
+        'start_color': 'blue',
+        'penup_offset': 0.25,
+        'color_pos': {
+            'black': 0,
+            'red': 1,
+            'green': 2,
+            'blue': 3,
+            'orange': None
+        }
+    }
+)
+sim.run(act=act, gui=True, console=True)

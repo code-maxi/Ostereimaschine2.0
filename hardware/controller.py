@@ -1,3 +1,4 @@
+import keyboard
 import json
 import traceback
 import math
@@ -45,6 +46,31 @@ class EasterControler(simulator.EasterSimulator):
     def y_percent(self): return (self.y_pos() / self.ystepper.steps_of_turn()) * 100
     
     def get_simulator_speed(self): return 0 # ignore simulator_speed
+    
+    def gui_start_act(self):
+        try: self.canvas.info_text('Please locate the robot arm by pressing W, S, A and D. Finally press CTRL + O.')
+        except AttributeError: pass
+        
+        escape = False
+        while not escape:
+            time.sleep(self.config['max_stepper_speed'])
+            zdirection = -1 if keyboard.is_pressed('w') else (1 if keyboard.is_pressed('s') else 0)
+            xdirection = -1 if keyboard.is_pressed('a') else (1 if keyboard.is_pressed('d') else 0)
+            ydirection = -1 if keyboard.is_pressed('r') else (1 if keyboard.is_pressed('f') else 0)
+            penup = keyboard.is_pressed('u')
+            
+            escape = keyboard.is_pressed('enter')
+            #print(f'zdirection={zdirection} and xdirection={xdirection} and escape={escape}')
+            
+            self.set_pen_up(penup)
+            self.zstepper.step(orientation=zdirection, count=False)
+            self.xstepper.step(orientation=xdirection, count=False)
+            self.ystepper.step(orientation=ydirection, count=False)
+            
+        try: self.canvas.info_text(None)
+        except AttributeError: pass
+        
+        super().gui_start_act()
         
     def steps_to(self, xsteps: int, ysteps: int):        
         if xsteps != 0 or ysteps != 0:
@@ -91,7 +117,10 @@ class EasterControler(simulator.EasterSimulator):
                 
                 adjustment_steps = self.config['pen_lazy'] * (new_direction - self.current_direction)
                 self.log(f'adjustment_steps={adjustment_steps}', 10)
+                
+                self.xstepper.setSpeed(self.config['max_stepper_speed'])
                 self.xstepper.turn(steps=adjustment_steps, count=False)
+                
                 self.current_direction = new_direction
                 
                 time.sleep(self.config['pen_lazy_sleep'])
@@ -103,14 +132,14 @@ class EasterControler(simulator.EasterSimulator):
             if info: self.update_canvas_info(self.canvas_info_pos())
     
     def set_pen_up(self, up: bool):
-        super().set_pen_up(up)
-        
-        newPos = 1 - self.pen_servo_offset - (self.config['penup_offset'] if up else 0)
-        
-        self.log(f'penup pos: {newPos}')
-        self.servo.setPos(newPos)
-        
-        time.sleep(self.config.get('penup_sleep', 0))
+        if super().set_pen_up(up):
+            newPos = self.config['penup_pos'] if up else self.config['pendown_pos']
+            
+            self.log(f'penup pos: {newPos}')
+            
+            time.sleep(self.config.get('penup_sleep', 0))
+            self.servo.setPos(newPos)
+            time.sleep(self.config.get('penup_sleep', 0))
         
     def change_color(self, color: str):
         current_pos = self.config['color_pos'][self.current_color]
@@ -140,7 +169,11 @@ class EasterControler(simulator.EasterSimulator):
     def on_console_input(self, typ: str, split: list):
         print(f'coltroler typ {typ}')
         
-        if 'stepper' in typ:
+        if typ == 'servo':
+            pos = float(split[1])
+            print(self.servo.setPos(pos))
+        
+        elif 'stepper' in typ:
             stepper = self.stepper(typ)
             turn = int(split[1])
             count = split[2] == 'True'

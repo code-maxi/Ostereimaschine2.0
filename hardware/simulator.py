@@ -7,7 +7,6 @@ import sys
 import default 
 import eastercanvas
 import threading
-import colors
 
 class EasterSimulator:
     def __init__(self, config: dict):
@@ -33,20 +32,35 @@ class EasterSimulator:
                 
         self.log('Simulator __init__ with config: ', 10)
         
+    def init_canvas(self):
+        self.canvas = eastercanvas.EasterCanvas(
+            self.config,
+            self.canvas_close
+        )
+    
     def canvas_close(self):
         self.cleanup()
         print('canvas close!')
         
-    def gui_debug(self, *args):
-        self.canvas = eastercanvas.EasterCanvas(
-            self.config,
-            self.egg_y_steps / self.egg_x_steps,
-            self.canvas_close
-        )
-        callback = em.get_save(args, 0, None)
-        if callback != None:
-            threading.Thread(target=callback).start()
-        self.canvas.main_loop()
+    def gui_start_act(self):
+        try: self.canvas.clear_grid()
+        except AttributeError: pass
+        self.act(self)
+        
+    def run(self, **kwargs):
+        self.act = kwargs.get('act', None)
+        gui = kwargs.get('gui', True)
+        console = kwargs.get('console', True)
+        
+        if gui:
+            self.init_canvas()
+            self.act_thread = threading.Thread(target=self.gui_start_act)
+            self.act_thread.start()
+        
+        if console: self.console_debug()
+        
+        try: self.canvas.main_loop()
+        except AttributeError: self.console_debug_thread.join()
         
     def console_debug(self, **kwargs):
         self.console_debug_thread = threading.Thread(target=self.console_debug_thread)
@@ -55,7 +69,7 @@ class EasterSimulator:
         
     def log(self, obj, *args):
         prio = em.get_save(args, 0, 0) 
-        if prio >= self.print_piority: print(colors.green('EasterSimulator: ' + str(obj)))
+        if prio >= self.print_piority: print(f'EasterSimulator: {obj}')
         
     def pos_to_string(self):
         dp = 1
@@ -109,9 +123,12 @@ class EasterSimulator:
         return minmax[index]
     
     def set_pen_up(self, up: bool):
-        self.ispenup = up
-        self.change_color(self.current_color)
-        time.sleep(self.get_simulator_speed() * 4)
+        if up != self.ispenup:
+            self.ispenup = up
+            self.change_color(self.current_color)
+            time.sleep(self.get_simulator_speed() * 4)
+            return True
+        else: return False
         
     def penup(self):   self.set_pen_up(True)
     def pendown(self): self.set_pen_up(False)
@@ -307,7 +324,7 @@ class EasterSimulator:
                 
         while not escape:
             if len(commands) == 0:
-                inp = input(colors.blue('?: '))
+                inp = input('?: ')
                 commands = inp.split('|')
             
             split = commands.pop(0).split(';')

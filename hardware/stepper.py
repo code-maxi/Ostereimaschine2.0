@@ -45,14 +45,15 @@ class EasterStepper:
         for pin in self.config['motor_pins']: GPIO.output( pin, GPIO.LOW )
         
     def step(self, **kwargs):
-        if not self.ignore_step:
+        orientation = kwargs.get('orientation', 1) # either 1 or -1
+        
+        if not self.ignore_step and orientation != 0:
             for pinIndex in range(len(self.config['motor_pins'])): 
                 GPIO.output(
                     self.config['motor_pins'][pinIndex], 
                     step_sequence[self.motor_step_counter][pinIndex]
                 ) # setting the outputs for the sequence state
             
-            orientation = kwargs.get('orientation', 1) # either 1 or -1
             mirror = -1 if self.config.get('mirror-inverted', False) else 1
             
             self.motor_step_counter = (self.motor_step_counter + orientation * mirror) % len(step_sequence) # count motor_step_counter
