@@ -110,7 +110,7 @@ def act(ct: EasterSimulator):
     eggs()
     pattern()
 
-sim = EasterSimulator(
+sim = EasterControler(
     {
         'simulator_start_speed': 0.0,
         'start_color': 'blue',
