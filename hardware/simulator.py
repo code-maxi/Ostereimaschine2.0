@@ -42,10 +42,17 @@ class EasterSimulator:
         self.cleanup()
         print('canvas close!')
         
+    def using_canvas(self):
+        try:
+            self.canvas
+            return True
+        except AttributeError:
+            return False
+        
     def gui_start_act(self):
-        try: self.canvas.clear_grid()
-        except AttributeError: pass
-        self.act(self)
+        if self.using_canvas():
+            self.canvas.clear_grid()
+            self.act(self)
         
     def run(self, **kwargs):
         self.act = kwargs.get('act', None)
@@ -54,13 +61,14 @@ class EasterSimulator:
         
         if gui:
             self.init_canvas()
-            self.act_thread = threading.Thread(target=self.gui_start_act)
-            self.act_thread.start()
+            if self.act != None:
+                self.act_thread = threading.Thread(target=self.gui_start_act)
+                self.act_thread.start()
         
         if console: self.console_debug()
         
-        try: self.canvas.main_loop()
-        except AttributeError: self.console_debug_thread.join()
+        if self.using_canvas(): self.canvas.main_loop()
+        else: self.console_debug_thread.join()
         
     def console_debug(self, **kwargs):
         self.console_debug_thread = threading.Thread(target=self.console_debug_thread)
@@ -137,15 +145,13 @@ class EasterSimulator:
     def y_stroke_steps(self): return round(self.config['pen_stroke_width'] / (self.config['egg_height'] * math.pi) * self.egg_y_steps) #TODO!
         
     def change_color(self, color: str):
-        self.log(f"Changing color to {color}...", 5)
+        self.log(f"Changing color to {color}...")
         self.current_color = color
         
-        try: self.canvas.set_color(None if self.ispenup else self.current_color)
-        except AttributeError: pass
+        if self.using_canvas(): self.canvas.set_color(None if self.ispenup else self.current_color)
         
     def update_canvas_info(self, info: dict):
-        try: self.canvas.update_info(info)
-        except AttributeError: pass
+        if self.using_canvas(): self.canvas.update_info(info)
         
     def canvas_info_pos(self):
         string_pos = self.pos_to_string().split('_')
@@ -169,11 +175,11 @@ class EasterSimulator:
         
         self.set_x_pos(self.x_pos() + xsteps)
         self.set_y_pos(self.y_pos() + ysteps)
-        
+                
         if abs(xsteps) > 0 or abs(ysteps) > 0:
-            try:
+            if self.using_canvas():
                 self.canvas.go_to((
-                    xsteps / self.egg_x_steps,
+                    xsteps / self.egg_border_steps,
                     ysteps / self.egg_y_steps
                 ), move, self.canvas_info_pos(), kwargs.get('info', False))
                 
@@ -183,8 +189,6 @@ class EasterSimulator:
                     sleep = length / 1000 * speed
                     time.sleep(sleep)
                     
-            except AttributeError: pass
-        
         return (xsteps, ysteps)
         
     def step_to(self, pos, **kwargs):
@@ -271,8 +275,7 @@ class EasterSimulator:
         elif typ == 'color': self.change_color(split[1])
         elif typ == 'hidecolor':
             self.current_color = split[1]
-            try: self.canvas.set_color(None if self.ispenup else self.current_color)
-            except AttributeError: pass
+            if self.using_canvas(): self.canvas.set_color(None if self.ispenup else self.current_color)
         
         elif typ == 'sin': self.sin_wave(200, self.egg_y_steps, 5, 50)
             

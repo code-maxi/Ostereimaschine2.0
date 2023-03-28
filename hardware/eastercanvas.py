@@ -89,11 +89,24 @@ class EasterCanvas:
             )
             
         if self.infotext != None:
+            padding = 5
+            font_size = 13
+            font = tkinter.font.Font(size=font_size, family="monospace")
+            text = str(self.infotext)
+            text_width = font.measure(text) + 2 * padding
+            
+            self.canvas.create_rectangle(
+                self.width / 2 - text_width / 2, self.height / 2,
+                self.width / 2 + text_width / 2, self.height / 2 + font_size + padding * 2,
+                fill='#fff', width=1, outline='#000'
+            )
+            
             self.canvas.create_text(
                 self.width / 2, self.height / 2,
-                text=str(self.infotext),
+                text=text,
                 fill='#000',
-                anchor='n'
+                anchor='n',
+                font=font
             )
             
     def info_text(self, text):
@@ -177,30 +190,46 @@ class EasterCanvas:
     def quit(self): self.window.quit()
     
     def go_to(self, deltapos: (float, float), move: bool, info: dict, paint_info: bool):
-        self.info.update(info)
-        
-        (xpen, ypen) = self.pen_pos
-        px = xpen + deltapos[0]
-        py = ypen + deltapos[1]
-    
-        if move: self.pen_pos = (px, py)
+        if not em.vec_zero(deltapos) or True:
             
-        else:
-            self.canvas.create_line(
-                (xpen + 0.5) * self.width, self.y_on_grid(ypen),
-                (px   + 0.5) * self.width, self.y_on_grid(py), 
-                fill=self.pen_color, width=self.stroke_width
-            )
+            self.info.update(info)
+            
+            (xpen, ypen) = self.pen_pos
+            px = xpen + deltapos[0]
+            py = ypen + deltapos[1]
         
-            if py > 1 or py < 0:
-                yadd = 1 if py < 0 else -1
-                self.pen_pos = (xpen, ypen + yadd)
-                self.go_to(deltapos, False, info, paint_info)
+            if move:
+                print('move')
+                self.pen_pos = (px, py)
+                rectx = self.x_on_grid(self.pen_pos[0])
+                recty = self.y_on_grid(self.pen_pos[1])
+                
+                self.canvas.create_rectangle(
+                    rectx - self.stroke_width / 2, recty - self.stroke_width / 2,
+                    rectx + self.stroke_width / 2, recty + self.stroke_width / 2, 
+                    fill=self.pen_color
+                )
                 
             else:
-                self.pen_pos = (px, py)
-                if paint_info: self.paint_info()
-                self.canvas.update()
+                x1 = self.x_on_grid(xpen)
+                y1 = self.y_on_grid(ypen)
+                x2 = self.x_on_grid(px)
+                y2 = self.y_on_grid(py)
+
+                self.canvas.create_line(
+                    x1, y1, x2, y2,
+                    fill=self.pen_color, width=self.stroke_width
+                )
+            
+                if py > 1 or py < 0:
+                    yadd = 1 if py < 0 else -1
+                    self.pen_pos = (xpen, ypen + yadd)
+                    self.go_to(deltapos, False, info, paint_info)
+                    
+                else:
+                    self.pen_pos = (px, py)
+                    if paint_info: self.paint_info()
+                    self.canvas.update()
          
          
          

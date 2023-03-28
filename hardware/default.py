@@ -2,7 +2,8 @@ defaultEasterControlerConfig = {
     'ystepper': {
         'motor_pins': [4,17,27,22],
         'start_step_sleep': 0.003,
-        'steps_of_turn': 4139,
+        'steps_of_turn': 4110, # 4110 +- 50 Abweichung
+        'mirror-inverted': True, # NEW!
         'name': 'Y-Stepper'
     },
     'xstepper': {
@@ -56,7 +57,7 @@ defaultEasterControlerConfig = {
     'pen_lazy_sleep': 0.05,
     'pen_stroke_width': 1,
     
-    'simulator_window_height': 1080,
+    'simulator_window_height': 1000,
     'simulator_window_width': 900,
 #    'simulator_window_height': 600,
     'simulator_on': True,

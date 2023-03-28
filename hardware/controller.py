@@ -48,8 +48,7 @@ class EasterControler(simulator.EasterSimulator):
     def get_simulator_speed(self): return 0 # ignore simulator_speed
     
     def gui_start_act(self):
-        try: self.canvas.info_text('Please locate the robot arm by pressing W, S, A and D. Finally press CTRL + O.')
-        except AttributeError: pass
+        if self.using_canvas(): self.canvas.info_text('Please locate the robot arm by pressing W, S, A and D. Finally press CTRL + O.')
         
         escape = False
         while not escape:
@@ -67,8 +66,7 @@ class EasterControler(simulator.EasterSimulator):
             self.xstepper.step(orientation=xdirection, count=False)
             self.ystepper.step(orientation=ydirection, count=False)
             
-        try: self.canvas.info_text(None)
-        except AttributeError: pass
+        if self.using_canvas(): self.canvas.info_text(None)
         
         super().gui_start_act()
         

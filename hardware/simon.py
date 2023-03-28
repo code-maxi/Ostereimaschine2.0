@@ -8,7 +8,7 @@ def act(ct: EasterSimulator):
     iterations = 10
     
     star_height = ct.egg_y_steps / iterations / 2
-    star_width = ct.egg_x_steps * 0.14
+    star_width = ct.egg_x_steps * 0.12
     star_fill = 1
     star_fac = 0.2
     
@@ -17,17 +17,17 @@ def act(ct: EasterSimulator):
     
     colors = ['red', 'green', 'blue']
     
-    sin_seg = 15
-    sin_width = 300
-    
-    left_line = -30
-    
     egg_res = 40
-    egg_fill = 3
+    egg_fill = 2
     egg_wsub = star_wsub
     egg_hsub = star_hsub * 2
-    egg_width = round(ct.egg_x_steps * 0.1)
+    egg_width = ct.egg_border_steps/4 - star_width/2
     egg_height = star_height
+    
+    left_line = egg_width - ct.egg_border_steps/2
+    
+    sin_seg = 15
+    sin_width = egg_width * 0.5
 
     def star(w: int, h: int, fill: int, fac: float, wsub: int, hsub: int, depth: int):
         oldpos = ct.xy_pos()
@@ -74,15 +74,15 @@ def act(ct: EasterSimulator):
         for n in [1, -1]:
             x = left_line * n
             
-            ct.go_to(x, 0, move=True, info=True)
-            ct.sin_wave(seg_number=sin_seg, width=sin_width, res=4)
+            ct.go_to(x, 0, move=True, step=True, info=True)
+            ct.sin_wave(seg_number=sin_seg, width=sin_width * n, res=32)
             
-            ct.step_to((ct.x_stroke_steps(), 0),   rel=True)
-            ct.go_to(x, 0)
+            #ct.step_to((ct.x_stroke_steps(), 0),   rel=True)
+            #ct.go_to(x, 0)
             
-            ct.sin_wave(seg_number=sin_seg, width=-sin_width, res=4)
-            ct.update_canvas_info({})
-            ct.go_to(x, 0)
+            #ct.sin_wave(seg_number=sin_seg, width=-sin_width, res=4)
+            #ct.update_canvas_info({})
+            #ct.go_to(x, 0)
             
             #ct.step_to((-sin_width * 1.5, 0),   rel=True, move=True)
             #ct.step_to((0, 0), long=True, rel=True)
@@ -100,7 +100,7 @@ def act(ct: EasterSimulator):
 
     def eggs():
         for d in [1, -1]:
-            ct.go_to(left_line * d, 0, move=True)
+            ct.go_to(left_line * d, 0, step=True, move=True)
             for s in range(iterations):
                 ct.change_color(colors[s % len(colors)])
                 ct.update_canvas_info({'star': f'egg   = {s} | {d}'})
@@ -113,7 +113,7 @@ def act(ct: EasterSimulator):
 sim = EasterControler(
     {
         'simulator_start_speed': 0.0,
-        'start_color': 'blue',
+        'start_color': 'red',
         'penup_offset': 0.25,
         'color_pos': {
             'black': 0,

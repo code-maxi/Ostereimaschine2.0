@@ -45,3 +45,4 @@ def vec_neg(v1): return (-v1[0], -v1[1])
 def vec_mul(v1, s): return (v1[0] * s, v1[1] * s)
 def vec_len(v1): return math.sqrt(v1[0] ** 2 + v1[1] ** 2)
 def vec_max(v1): return max(v1[0], v1[1])
+def vec_zero(v1): return v1[0] == 0 and v1[1] == 0
