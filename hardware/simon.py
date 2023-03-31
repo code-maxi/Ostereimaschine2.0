@@ -1,4 +1,3 @@
-from controller import EasterControler
 from simulator import EasterSimulator
 import eastermath as em
 import time
@@ -7,74 +6,70 @@ import math
 def act(ct: EasterSimulator):
     iterations = 10
     
-    star_height = ct.egg_y_steps / iterations / 2
+    star_height = ct.egg_y_steps / iterations / 2 * 1j
     star_width = ct.egg_x_steps * 0.12
     star_fill = 1
     star_fac = 0.2
     
     star_wsub = ct.x_stroke_steps()
-    star_hsub = ct.y_stroke_steps()
+    star_hsub = ct.y_stroke_steps() * 1j
     
     colors = ['red', 'green', 'blue']
     
     egg_res = 40
     egg_fill = 2
-    egg_wsub = star_wsub
-    egg_hsub = star_hsub * 2
-    egg_width = ct.egg_border_steps/4 - star_width/2
-    egg_height = star_height
+    egg_sub = star_wsub + star_hsub * 2
+    egg_size = ct.egg_border_steps/4 - star_width/2 + star_height
     
-    left_line = egg_width - ct.egg_border_steps/2
+    left_line = egg_size.real - ct.egg_border_steps/2
     
     sin_seg = 15
-    sin_width = egg_width * 0.5
+    sin_width = egg_size.real * 0.5
 
     def star(w: int, h: int, fill: int, fac: float, wsub: int, hsub: int, depth: int):
         oldpos = ct.xy_pos()
         sw = round(w * fac)
-        sh = round(h * fac)
-        positions = [(0, -h), (sw, -sh), (w, 0), (sw, sh), (0, h), (-sw, sh), (-w, 0), (-sw, -sh), (0, -h)]
-        endpositions = [(sw, -sh), (w, 0), (sw, sh), (0, h)]
+        sh = em.round_complex(h * fac)
+        positions = [(0 - h), (sw - sh), (w), (sw + sh), (h), (-sw + sh), (-w), (-sw - sh), (-h)]
+        endpositions = [(sw - sh), (w), (sw + sh), (h)]
         
-        repeat = fill > 0 and w > 0 and h > 0 
+        repeat = fill > 0 and w > 0 and h.imag > 0 
         
         i = 0
         for pos in (positions if repeat else (positions + endpositions)):
-             newpos = em.vec_add(oldpos, (pos[0], pos[1] + h))
+             newpos = oldpos + pos + h
              ct.step_to(newpos, move=i == 0)
              i += 1 
              
         if repeat:
-            ct.step_to((0, hsub), rel=True)
+            ct.step_to(hsub, rel=True)
             star(w - wsub, h - hsub, fill - 1, fac, wsub, hsub, depth + 1)
-            ct.step_to((0, hsub), rel=True)
+            ct.step_to(hsub, rel=True)
             
-    def egg(xrad: int, yrad: int, fill: int):
-        xypos = ct.xy_pos()
-        center = em.vec_add(xypos, (0, yrad))
+    def egg(rad: complex, fill: int):
+        center = ct.xy_pos() + rad.imag*1j
         
-        new_xrad = xrad - egg_wsub
-        new_yrad = yrad - egg_hsub
-        repeat = fill > 0 and new_xrad > 0 and new_yrad > 0
+        new_rad = rad - egg_sub
+
+        repeat = fill > 0 and new_rad.real > 0 and new_rad.imag > 0
         res_iterate = round(egg_res * (1 if repeat else 1.5))
         
         for r in range(res_iterate+1):
             angle = (r / egg_res + 0.75) * 2 * math.pi
-            delta = (math.cos(angle) * xrad, math.sin(angle) * yrad)
-            new_xypos = em.vec_add(center, delta)
-            ct.step_to(new_xypos, step=True)
+            delta = math.cos(angle) * rad.real + math.sin(angle) * rad.imag * 1j
+            new_xypos = center + delta
+            ct.step_to(new_xypos)
             
         if repeat:
-            #ct.step_to((0, 0), rel=True, info=True)
-            egg(new_xrad, new_yrad, fill - 1) # recursive call
-            ct.step_to((0, egg_hsub * 2), rel=True, info=True)
+            egg(new_rad, fill - 1) # recursive call
+            ct.step_to(egg_sub.imag * 2j, rel=True, info=True)
     
     def pattern():
         ct.change_color('black')
         for n in [1, -1]:
             x = left_line * n
             
-            ct.go_to(x, 0, move=True, step=True, info=True)
+            ct.step_to(x, move=True, step=True, info=True)
             ct.sin_wave(seg_number=sin_seg, width=sin_width * n, res=32)
             
             #ct.step_to((ct.x_stroke_steps(), 0),   rel=True)
@@ -91,7 +86,7 @@ def act(ct: EasterSimulator):
             #ct.step_to((0, 0), long=True, rel=True)
     
     def stars():
-        ct.go_to(0, 0, move=True)
+        ct.go_to(0, move=True)
         for s in range(iterations):
             print(f'star {s} pos {ct.pos_to_string()}')
             ct.change_color(colors[s % len(colors)])
@@ -100,17 +95,20 @@ def act(ct: EasterSimulator):
 
     def eggs():
         for d in [1, -1]:
-            ct.go_to(left_line * d, 0, step=True, move=True)
+            ct.step_to(left_line * d, move=True)
             for s in range(iterations):
                 ct.change_color(colors[s % len(colors)])
                 ct.update_canvas_info({'star': f'egg   = {s} | {d}'})
-                egg(egg_width, egg_height, egg_fill)
+                egg(egg_size, egg_fill)
         
     stars()
     eggs()
     pattern()
+    
+    ct.go_home()
 
-sim = EasterControler(
+#from controller import EasterControler
+sim = EasterSimulator(
     {
         'simulator_start_speed': 0.0,
         'start_color': 'red',
@@ -121,7 +119,8 @@ sim = EasterControler(
             'green': 2,
             'blue': 3,
             'orange': None
-        }
+        },
+        'name': 'Sterne und Eier'
     }
 )
 sim.run(act=act, gui=True, console=True)

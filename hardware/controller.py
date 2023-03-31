@@ -1,15 +1,8 @@
-import keyboard
-import json
-import traceback
-import math
 import time
 import RPi.GPIO as GPIO
 import stepper
 import servo
-import threading
 import eastermath as em
-import sys
-import default
 import simulator
 
 class EasterControler(simulator.EasterSimulator):
@@ -46,29 +39,18 @@ class EasterControler(simulator.EasterSimulator):
     def y_percent(self): return (self.y_pos() / self.ystepper.steps_of_turn()) * 100
     
     def get_simulator_speed(self): return 0 # ignore simulator_speed
+
+
+    def adjust_loop(self):
+        super().adjust_loop()
     
-    def gui_start_act(self):
-        if self.using_canvas(): self.canvas.info_text('Please locate the robot arm by pressing W, S, A and D. Finally press CTRL + O.')
+        xdirection = -1 if keyboard.is_pressed(self.xkeys[0]) else (1 if keyboard.is_pressed(self.xkeys[1]) else 0)
+        ydirection = -1 if keyboard.is_pressed(self.ykeys[0]) else (1 if keyboard.is_pressed(self.ykeys[1]) else 0)
+        zdirection = -1 if keyboard.is_pressed(self.zkeys[0]) else (1 if keyboard.is_pressed(self.zkeys[1]) else 0)
         
-        escape = False
-        while not escape:
-            time.sleep(self.config['max_stepper_speed'])
-            zdirection = -1 if keyboard.is_pressed('w') else (1 if keyboard.is_pressed('s') else 0)
-            xdirection = -1 if keyboard.is_pressed('a') else (1 if keyboard.is_pressed('d') else 0)
-            ydirection = -1 if keyboard.is_pressed('r') else (1 if keyboard.is_pressed('f') else 0)
-            penup = keyboard.is_pressed('u')
-            
-            escape = keyboard.is_pressed('enter')
-            #print(f'zdirection={zdirection} and xdirection={xdirection} and escape={escape}')
-            
-            self.set_pen_up(penup)
-            self.zstepper.step(orientation=zdirection, count=False)
-            self.xstepper.step(orientation=xdirection, count=False)
-            self.ystepper.step(orientation=ydirection, count=False)
-            
-        if self.using_canvas(): self.canvas.info_text(None)
-        
-        super().gui_start_act()
+        self.zstepper.step(orientation=zdirection, count=False)
+        self.xstepper.step(orientation=xdirection, count=False)
+        self.ystepper.step(orientation=ydirection, count=False)
         
     def steps_to(self, xsteps: int, ysteps: int):        
         if xsteps != 0 or ysteps != 0:
@@ -95,20 +77,21 @@ class EasterControler(simulator.EasterSimulator):
             
             thread.join()
         
-    def go_to(self, xunit: float, yunit: float, **kwargs):
+    def steps_to(self, pos: complex, **kwargs):
         move = kwargs.get('move', False)
         info = kwargs.get('info', False)
     
         new_kwargs = dict(kwargs)
         new_kwargs.update({'info':False})
-        (xsteps, ysteps) = super().go_to(xunit, yunit, **new_kwargs)
+
+        delta_steps = super().go_to(pos, **new_kwargs)
         
-        if xsteps != 0 or ysteps != 0: 
+        if delta_steps != None: 
             if move:
                 self.penup()
                 self.current_direction = 0
             
-            new_direction = em.direction(xsteps)
+            new_direction = em.direction(delta_steps.real)
             
             if self.current_direction != new_direction and not move:
                 time.sleep(self.config['pen_lazy_sleep'])
@@ -123,8 +106,7 @@ class EasterControler(simulator.EasterSimulator):
                 
                 time.sleep(self.config['pen_lazy_sleep'])
             
-            self.log(f'line to steps: {xsteps}:{ysteps}')
-            self.steps_to(xsteps, ysteps)
+            self.steps_to(delta_steps.real, delta_steps.imag)
             
             if move: self.pendown()
             if info: self.update_canvas_info(self.canvas_info_pos())

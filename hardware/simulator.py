@@ -1,3 +1,4 @@
+import keyboard
 import json
 import traceback
 import math
@@ -21,8 +22,7 @@ class EasterSimulator:
         self.egg_border_length = self.config['egg_use_percent'] / 100 * self.config['egg_length']
         self.egg_border_steps = round(self.egg_border_length * self.x_velocity)
         
-        self.simulator_x = 0
-        self.simulator_y = 0
+        self.simulator_pos = (0 + 0j)
         self.simulator_speed = self.config['simulator_start_speed']
         
         self.ispenup = False
@@ -48,21 +48,61 @@ class EasterSimulator:
             return True
         except AttributeError:
             return False
+            
+    def adjust_loop(self):
+        time.sleep(self.config['max_stepper_speed'])
+        penup = not keyboard.is_pressed(self.upkey)
+        self.escape = keyboard.is_pressed(self.escapekey)
+        self.set_pen_up(penup)
         
-    def gui_start_act(self):
-        if self.using_canvas():
-            self.canvas.clear_grid()
-            self.act(self)
+    def run_egg(self):
+        self.xkeys = ('a', 'd')
+        self.ykeys = ('r', 'f')
+        self.zkeys = ('w', 's')
+        self.upkey = 'u'
+        self.escapekey = 'enter'
+    
+        adjust_text = f'''
+    ________________________________
+    | Drucke "{self.config["name"]}"... |
+      ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+    Bitte richte den Roboterarm richtig aus, indem du folgende Tasten drückst.  
+    <{self.xkeys[0].upper()}> Arm nach rechts     <{self.xkeys[1].upper()}> Arm nach links, 
+    <{self.zkeys[0].upper()}> Stifte ausfahren,   <{self.zkeys[1].upper()}> Stifte einfahren,   
+    <{self.ykeys[0].upper()}> Ei vorwärts drehen, <{self.ykeys[1].upper()}> Ei rückwers drehen, 
+    <{self.upkey.upper()}> Stift heruterlassen, 
+    <{self.escapekey.upper()}> Mit dem Drucken beginnen.    
+        '''
+        print('info text')
+        self.canvas.info_text(adjust_text)
+        self.canvas.window.update()
+        
+        self.escape = self.direct_run
+        while not self.escape: self.adjust_loop()
+        
+        self.canvas.paint_all()
+        
+        self.act(self)
+        
+        finish_text = f'''
+    | FERTIG! |
+     ‾‾‾‾‾‾‾‾‾‾
+    Das Ei "{self.config["name"]}" wurde fertiggestellt.\n    
+    Du kannst es nun vorsichtig aus der Halterung nehmen.   
+        '''
+        print('finish')
+        if not self.direct_run: self.canvas.info_text(finish_text)
         
     def run(self, **kwargs):
         self.act = kwargs.get('act', None)
+        self.direct_run = kwargs.get('direct_run', False)
         gui = kwargs.get('gui', True)
         console = kwargs.get('console', True)
         
         if gui:
             self.init_canvas()
             if self.act != None:
-                self.act_thread = threading.Thread(target=self.gui_start_act)
+                self.act_thread = threading.Thread(target=self.run_egg)
                 self.act_thread.start()
         
         if console: self.console_debug()
@@ -89,15 +129,12 @@ class EasterSimulator:
         return f"({xpercent: 5.1f}% | {ypercent: 5.1f}%)_({xdistance: 5.1f}mm|    ?mm)_({xsteps: 5}x | {ysteps: 5}x)"
         
     def log_pos(self): self.log(self.pos_to_string(), 10)
-        
-    def x_pos(self): return self.simulator_x
-    def y_pos(self): return em.modulo(self.simulator_y, self.egg_y_steps)
-    def xy_pos(self): return (self.x_pos(), self.y_pos())
+    
+    def xy_pos(self): return self.simulator_pos
+    def x_pos(self): return self.xy_pos().real
+    def y_pos(self): return self.xy_pos().imag
     
     def get_simulator_speed(self): return self.simulator_speed
-    
-    def set_x_pos(self, x: float): self.simulator_x = x
-    def set_y_pos(self, y: float): self.simulator_y = y
     
     def x_percent(self): return self.x_pos() / self.egg_border_steps
     def y_percent(self): return self.y_pos() / self.egg_y_steps
@@ -106,36 +143,76 @@ class EasterSimulator:
         xpercent = self.x_pos() / self.egg_x_steps
         return em.egg_caliber(xpercent, self.config['egg_height'])
     
-    def x_delta_steps(self, xunit: float, **kwargs):
-        steps = xunit
+    def delta_steps(self, new_pos: complex, **kwargs):
+        ysteps1 = new_pos.imag - self.y_pos()
+        ysteps2 = ysteps1 + (-self.egg_y_steps if ysteps1 > 0 else self.egg_y_steps)
+        
+        yminmax = em.abs_minmax(ysteps1, ysteps2)
+        yindex = 1 if kwargs.get('long', False) == True else 0
+        
+        xsteps = new_pos.real - self.x_pos()
+        ysteps = yminmax[yindex]
     
-        if not kwargs.get('step', False):
-            if xunit < -50 or xunit > 50: raise Exception(f'the x-pos ({xunit}) has to be between -50% and 50%')
-            steps = xunit / 100 * self.egg_border_length * self.x_velocity
+        return (xsteps + ysteps * 1j)
         
-        return steps - self.x_pos()
+    def step_to(self, ppos: complex, **kwargs):
+        move = kwargs.get('move', False)        
+        new_pos = ppos + self.xy_pos() if kwargs.get('rel', False) else ppos
+        delta_steps = self.delta_steps(new_pos, long=kwargs.get('long', False))
+
+        #print(f'step_to new_pos {new_pos}')
+                
+        self.simulator_pos = new_pos
+                
+        if abs(delta_steps) > 0:
+            if self.using_canvas():
+                canvas_pos = (delta_steps.real / self.egg_border_steps + delta_steps.imag / self.egg_y_steps * 1j)
+                #print(f'step_to canvas {canvas_pos}')
+                self.canvas.go_to(
+                    canvas_pos, 
+                    move, self.canvas_info_pos(), kwargs.get('info', False)
+                )
+                
+                speed = self.get_simulator_speed()
+                if not move and speed > 0:
+                    length = abs(delta_steps)
+                    sleep = length / 1000 * speed
+                    time.sleep(sleep)
+                    
+            return delta_steps
+        else: return None
         
-    def y_delta_steps(self, yunit: float, **kwargs):
-        newPos = yunit
         
-        if not kwargs.get('step', False):
-            factor = em.modulo(yunit, 100) / 100
-            newPos = round(factor * self.egg_y_steps)
+    def go_to(self, pos: complex, **kwargs):
+        if pos.real < -50 or pos.real > 50: raise Exception(f'the x-pos ({pos.real}) has to be between -50% and 50%')
         
-        steps1 = newPos - self.y_pos()
-        steps2 = steps1 + (-self.egg_y_steps if steps1 > 0 else self.egg_y_steps)
+        #print(f'go_to pos {pos}')
         
-        minmax = em.abs_minmax(steps1, steps2)
-        index = 1 if kwargs.get('long', False) == True else 0
+        new_pos = em.round_complex(
+            pos.real / 100 * self.egg_border_steps
+            + round(em.modulo(pos.imag, 100) / 100 * self.egg_y_steps) * 1j
+        )
         
-        return minmax[index]
-    
+        #print(f'go_to new_pos {new_pos}')
+        
+        self.step_to(new_pos, **kwargs)
+        
+    def go_home(self):
+        self.penup()
+        self.go_to(0,0, move=True)
+        
+    def step_to_multiple(poses, **kwargs):
+        for pos in poses: self.step_to(pos, **kwargs)
+        
     def set_pen_up(self, up: bool):
         if up != self.ispenup:
             self.ispenup = up
             self.change_color(self.current_color)
             time.sleep(self.get_simulator_speed() * 4)
+            if self.using_canvas(): self.canvas.set_color(None if up else self.pen_color)
+            
             return True
+            
         else: return False
         
     def penup(self):   self.set_pen_up(True)
@@ -143,12 +220,13 @@ class EasterSimulator:
     
     def x_stroke_steps(self): return self.x_velocity * self.config['pen_stroke_width']
     def y_stroke_steps(self): return round(self.config['pen_stroke_width'] / (self.config['egg_height'] * math.pi) * self.egg_y_steps) #TODO!
+    def xy_stroke_steps(self): return self.x_stroke_steps() + self.y_stroke_steps() * 1j
         
     def change_color(self, color: str):
-        self.log(f"Changing color to {color}...")
+        self.log(f"Changing color to {color}...", 10)
         self.current_color = color
         
-        if self.using_canvas(): self.canvas.set_color(None if self.ispenup else self.current_color)
+        if self.using_canvas(): self.canvas.set_color(self.current_color)
         
     def update_canvas_info(self, info: dict):
         if self.using_canvas(): self.canvas.update_info(info)
@@ -160,44 +238,6 @@ class EasterSimulator:
             'p2': string_pos[1],
             'p3': string_pos[2]
         }
-        
-    def go_to(self, pxunit: float, pyunit: float, **kwargs):
-        move = kwargs.get('move', False)
-        step_unit = kwargs.get('step', False)
-        
-        xunit = pxunit + self.x_pos() if kwargs.get('rel', False) else pxunit
-        yunit = pyunit + self.y_pos() if kwargs.get('rel', False) else pyunit
-                
-        xsteps = self.x_delta_steps(xunit, step=step_unit)
-        ysteps = self.y_delta_steps(yunit, step=step_unit, long=kwargs.get('long', False))
-        
-        self.log(f'xstepsr={xsteps / self.egg_border_steps} ystepsr={ysteps / self.egg_y_steps} long={kwargs.get("long", False)}')
-        
-        self.set_x_pos(self.x_pos() + xsteps)
-        self.set_y_pos(self.y_pos() + ysteps)
-                
-        if abs(xsteps) > 0 or abs(ysteps) > 0:
-            if self.using_canvas():
-                self.canvas.go_to((
-                    xsteps / self.egg_border_steps,
-                    ysteps / self.egg_y_steps
-                ), move, self.canvas_info_pos(), kwargs.get('info', False))
-                
-                speed = self.get_simulator_speed()
-                if speed > 0:
-                    length = em.vec_len((xsteps, ysteps))
-                    sleep = length / 1000 * speed
-                    time.sleep(sleep)
-                    
-        return (xsteps, ysteps)
-        
-    def step_to(self, pos, **kwargs):
-        newkwargs = dict(kwargs)
-        newkwargs.update({'step':True})
-        self.go_to(pos[0], pos[1], **newkwargs)
-        
-    def go_to_multiple(poses, **kwargs):
-        for pos in poses: self.go_to(pos[0], pos[1], **kwargs)
         
     def circle(self, **kwargs):
         xpos_p = kwargs.get('xpos', self.x_pos())
@@ -227,7 +267,7 @@ class EasterSimulator:
             new_ypos = round(ypos + math.sin(angle) * yrad)
             self.log(f'{depthspace}index={r} angle={angle}:{angle/math.pi * 180} cos={math.cos(angle)} sin={math.sin(angle)} newx={new_xpos} newy={new_ypos}')
             
-            self.go_to(new_xpos, new_ypos, move=(r == 0), step=True)
+            self.step_to(new_xpos, new_ypos, move=(r == 0))
             
         if kwargs.get('fill', False):
             sub_steps_x = kwargs.get('sub_steps_x', self.x_stroke_steps()) # getting pen stroke smaller
@@ -256,14 +296,13 @@ class EasterSimulator:
         seg_number = kwargs.get('seg_number', 5)
         res = kwargs.get('res', 10)
         
-        old_ypos = self.y_pos()
-        old_xpos = self.x_pos()
+        old_pos = self.xy_pos()
         seg_length = round(kwargs.get('length', self.egg_y_steps) / seg_number)
         
         for i in range(res * seg_number):
-            xpos = math.sin(i / res * math.pi * 2) * width + old_xpos
-            ypos = i / res * seg_length + old_ypos
-            self.go_to(xpos, ypos, step=True)
+            xpos = (math.sin(i / res * math.pi * 2) * width + (i / res * seg_length) * 1j) + old_pos
+            new_pos = xpos
+            self.step_to(new_pos)
         
     def on_console_input(self, typ: str, split: list):
         print(f'simulator typ {typ}')
@@ -280,13 +319,12 @@ class EasterSimulator:
         elif typ == 'sin': self.sin_wave(200, self.egg_y_steps, 5, 50)
             
         elif typ == 'lineto' or typ == 'moveto':
-            x = float(split[1])
-            y = float(split[2])
+            pos = complex(split[1])
             
             lw = em.get_save(split, 3, 'False') == 'True'
             
-            if typ == 'lineto': self.go_to(x, y, long=lw, info=True)
-            if typ == 'moveto': self.go_to(x, y, move=True, info=True)
+            if typ == 'lineto': self.go_to(pos, long=lw, info=True)
+            if typ == 'moveto': self.go_to(pos, move=True, info=True)
             
             self.log(f'{typ} => {self.pos_to_string()}', 10)
             
@@ -295,7 +333,8 @@ class EasterSimulator:
                 print(f'x = {x}%: y = ', end='')
                 for y in range(10, 100, 10):
                     print(f'{y}% ', end='')
-                    self.go_to(x,y, move=True)
+                    self.go_to((x + y * 1j), move=True)
+                    
                 print('')    
                 
         elif typ == 'pos': self.log_pos()

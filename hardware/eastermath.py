@@ -1,6 +1,9 @@
+import re
+import os
+from xml.dom import minidom
 import math
 
-def modulo(pn: float, z: float):
+def modulo(pn: complex, z: complex):
     n = pn
     while n >= z: n -= z
     while n < 0: n += z
@@ -38,7 +41,19 @@ def color_to_hex(color):
     elif color == 'blue': res = '#00f'
     elif color == 'orange': res = '#ffa500'
     return res
-    
+
+def round_complex(z: complex, *args):
+    digits = get_save(args, 0, 0)
+    return round(z.real, digits) + round(z.imag, digits) * 1j
+
+def relative_path(path: str):
+    absolute = os.path.realpath(__file__).split('/')
+    absolute.pop()
+    return '/'.join(absolute) + '/' + path
+
+
+'''
+
 def vec_add(v1, v2): return (v1[0] + v2[0], v1[1] + v2[1])
 def vec_sub(v1, v2): return (v1[0] - v2[0], v1[1] - v2[1])
 def vec_neg(v1): return (-v1[0], -v1[1])
@@ -46,3 +61,46 @@ def vec_mul(v1, s): return (v1[0] * s, v1[1] * s)
 def vec_len(v1): return math.sqrt(v1[0] ** 2 + v1[1] ** 2)
 def vec_max(v1): return max(v1[0], v1[1])
 def vec_zero(v1): return v1[0] == 0 and v1[1] == 0
+
+def read_svg(file: str):
+    doc = minidom.parse(file)
+    command = ''
+    
+    paths = [ path.getAttribute('d').split(' ') for path in doc.getElementsByTagName('path') ]
+    coordinates = [[]]
+    
+    for path in paths:
+        for item in path:
+            try:
+                pos = [ float(coordinate) for coordinate in item.split(',') ]
+                lastcoord = get_save(-1, coordinates)
+                if lastcoord != None:
+                    if command == 'h': coordinates.append((lastcoord[0] + pos[0], lastcoord[1]))
+                    if command == 'v': coordinates.append((lastcoord[0], lastcoord[1] + pos[0]))
+                    
+                
+            except:
+                if path.lower() == 'z':
+                    firstcoord = get_save(coordinates, 0)
+                    if firstcoord != None: coordinates.append(firstcoord)
+                else: command = path
+            
+
+read_svg(relative_path('images/inkscape-test.svg'))
+
+
+command = r'\b[a-zA-Z]\b'
+path_commands = [ [ found.replace(' ', '') for found in re.findall(command, path_string) ] for path_string in path_strings]
+    
+path_coordinates = [ [ found.strip().split(' ') for found in re.split(command, path_string) ] for path_string in path_strings ]
+path_coordinates = [ list(filter(lambda pc: len(pc) > 0, pcl)) for pcl in path_coordinates ]
+
+print('\n\n'.join(path_strings))
+print()
+print(path_commands)
+print()
+print(path_coordinates)
+print()
+print('\n\n\n'.join([ '\n\n'.join(pc) for pc in path_coordinates ]))
+
+'''

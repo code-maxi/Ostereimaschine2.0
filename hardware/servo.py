@@ -1,7 +1,4 @@
-import threading
-import time
 import RPi.GPIO as GPIO
-import math
 
 class EasterServo:
     def __init__(self, config: dict):
