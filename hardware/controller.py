@@ -10,7 +10,6 @@ class EasterControler(simulator.EasterSimulator):
         super().__init__(config)
         
         self.pen_servo_offset = 0
-        self.current_direction = 0
         
         self.setup()
         
@@ -48,11 +47,11 @@ class EasterControler(simulator.EasterSimulator):
         ydirection = -1 if keyboard.is_pressed(self.ykeys[0]) else (1 if keyboard.is_pressed(self.ykeys[1]) else 0)
         zdirection = -1 if keyboard.is_pressed(self.zkeys[0]) else (1 if keyboard.is_pressed(self.zkeys[1]) else 0)
         
-        self.zstepper.step(orientation=zdirection, count=False)
-        self.xstepper.step(orientation=xdirection, count=False)
-        self.ystepper.step(orientation=ydirection, count=False)
+        self.zstepper.step(direction=zdirection, count=False)
+        self.xstepper.step(direction=xdirection, count=False)
+        self.ystepper.step(direction=ydirection, count=False)
         
-    def steps_to(self, xsteps: int, ysteps: int):        
+    def stepper_step_to(self, xsteps: int, ysteps: int):        
         if xsteps != 0 or ysteps != 0:
             steps_minmax   = em.abs_minmax(xsteps, ysteps)
             isx_max        = steps_minmax[1] == xsteps
@@ -69,44 +68,35 @@ class EasterControler(simulator.EasterSimulator):
             
             self.log(f'steps_to:\nsteps_minmax:{steps_minmax}\nstepper_minmax:{stepper_minmax}\nsleep_minmax:{sleep_minmax}\n______')
             
-            stepper_minmax[1].setSpeed(sleep_minmax[1])
-            stepper_minmax[0].setSpeed(sleep_minmax[0])
+            stepper_minmax[1].set_speed(sleep_minmax[1])
+            stepper_minmax[0].set_speed(sleep_minmax[0])
             
             thread =                     stepper_minmax[1].turn(steps=steps_minmax[1], thread=True)
             if abs(steps_minmax[0]) > 0: stepper_minmax[0].turn(steps=steps_minmax[0], thread=False)
             
             thread.join()
         
-    def steps_to(self, pos: complex, **kwargs):
+    def step_to(self, ppos: complex, **kwargs):
         move = kwargs.get('move', False)
         info = kwargs.get('info', False)
     
         new_kwargs = dict(kwargs)
         new_kwargs.update({'info':False})
 
-        delta_steps = super().go_to(pos, **new_kwargs)
+        delta_steps = super().step_to(ppos, **new_kwargs)
         
         if delta_steps != None: 
             if move:
                 self.penup()
-                self.current_direction = 0
+                self.xstepper.lazy_direction = 0
+                        
+            if not move:
+                xthread = self.xstepper.adjust_lazy(delta_steps.real, self.config['max_stepper_speed'])
+                ythread = self.ystepper.adjust_lazy(delta_steps.imag, self.config['max_stepper_speed'])
+                if xthread != None: xthread.join()
+                if ythread != None: ythread.join()
             
-            new_direction = em.direction(delta_steps.real)
-            
-            if self.current_direction != new_direction and not move:
-                time.sleep(self.config['pen_lazy_sleep'])
-                
-                adjustment_steps = self.config['pen_lazy'] * (new_direction - self.current_direction)
-                self.log(f'adjustment_steps={adjustment_steps}', 10)
-                
-                self.xstepper.setSpeed(self.config['max_stepper_speed'])
-                self.xstepper.turn(steps=adjustment_steps, count=False)
-                
-                self.current_direction = new_direction
-                
-                time.sleep(self.config['pen_lazy_sleep'])
-            
-            self.steps_to(delta_steps.real, delta_steps.imag)
+            self.stepper_step_to(delta_steps.real, delta_steps.imag)
             
             if move: self.pendown()
             if info: self.update_canvas_info(self.canvas_info_pos())
@@ -139,9 +129,9 @@ class EasterControler(simulator.EasterSimulator):
     def cleanup(self):
         self.log('cleanup', 10)
         
-        self.ystepper.setPinsLow()
-        self.xstepper.setPinsLow()
-        self.zstepper.setPinsLow()
+        self.ystepper.set_pins_low()
+        self.xstepper.set_pins_low()
+        self.zstepper.set_pins_low()
         self.servo.stopPWM()
         
         GPIO.cleanup()

@@ -1,4 +1,5 @@
 import re
+import random
 import os
 from xml.dom import minidom
 import math
@@ -50,6 +51,8 @@ def relative_path(path: str):
     absolute = os.path.realpath(__file__).split('/')
     absolute.pop()
     return '/'.join(absolute) + '/' + path
+
+def random_item(array: list): return array[random.randrange(0, len(array))]
 
 
 '''

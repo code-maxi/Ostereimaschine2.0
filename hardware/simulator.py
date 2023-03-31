@@ -15,6 +15,7 @@ class EasterSimulator:
         self.config.update(config)
         
         self.x_velocity = self.config['xstepper']['steps_per_millimeter']
+        self.y_velocity = self.config['ystepper']['steps_of_turn'] / (math.pi * self.config['egg_height'])
         
         self.egg_x_steps = round(self.config['egg_length'] * self.x_velocity)
         self.egg_y_steps = self.config['ystepper']['steps_of_turn']
@@ -138,6 +139,12 @@ class EasterSimulator:
     
     def x_percent(self): return self.x_pos() / self.egg_border_steps
     def y_percent(self): return self.y_pos() / self.egg_y_steps
+
+    def x_to_ysteps(self, xsteps: complex):
+        return round(xsteps.real * self.y_velocity / self.x_velocity) * 1j
+    
+    def y_to_xsteps(self, ysteps: complex): 
+        return round(ysteps.imag * self.x_velocity / self.y_velocity)
     
     def y_caliber(self):
         xpercent = self.x_pos() / self.egg_x_steps
@@ -223,7 +230,7 @@ class EasterSimulator:
     def xy_stroke_steps(self): return self.x_stroke_steps() + self.y_stroke_steps() * 1j
         
     def change_color(self, color: str):
-        self.log(f"Changing color to {color}...", 10)
+        self.log(f"Changing color to {color}...", 0)
         self.current_color = color
         
         if self.using_canvas(): self.canvas.set_color(self.current_color)

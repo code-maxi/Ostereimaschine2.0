@@ -5,6 +5,7 @@ import tkinter
 import tkinter.font
 import threading
 import time
+import math
 
 class EasterCanvas:
     def __init__(self, config: dict, onclose):
@@ -12,6 +13,9 @@ class EasterCanvas:
         
         self.height  = self.config['simulator_window_height']
         self.width  = self.config['simulator_window_width']
+
+        if self.width == None: 
+            self.width = self.config['egg_length'] / (self.config['egg_height'] * math.pi) * self.height
         
         self.stroke_width = self.config['pen_stroke_width'] * 4 * 2
         
@@ -191,7 +195,7 @@ class EasterCanvas:
         )
             
     def set_color(self, color):
-        print(f'canvas change color to {color}')
+        #print(f'canvas change color to {color}')
         self.pen_color = em.color_to_hex(color)
         self.info.update({
             'color': f'color = {color if color != None else "–"}',
@@ -216,7 +220,7 @@ class EasterCanvas:
             display_newpos = self.pos_on_grid(new_pos)
         
             if move:
-                print('move')
+                #print('move')
                 self.canvas.create_rectangle(
                     display_newpos.real - self.stroke_width / 2, display_newpos.imag - self.stroke_width / 2,
                     display_newpos.real + self.stroke_width / 2, display_newpos.imag + self.stroke_width / 2, 

@@ -19,35 +19,45 @@ class EasterStepper:
         
         self.motor_step_counter = 0 # position in step_sequence
         self.step_pos = 0 # whole step pos
+
+        self.lazy_direction = 0
         
         self.step_sleep = self.config.get('start_step_sleep', 0.003)
         self.ignore_step = False
         
-        self.setupPins()
+        self.setup_pins()
         
     def __str__(self): return self.config['name'] + str(self.config['motor_pins'])
     def log(self, o): print(f"{self.__str__()}: {o}")
         
-    def setupPins(self):
+    def setup_pins(self):
         self.log("Setting up...")
         for pin in self.config['motor_pins']: GPIO.setup(pin, GPIO.OUT)
-        self.setPinsLow()
+        self.set_pins_low()
         
     def steps_of_turn(self): return self.config['steps_of_turn']
     def velocity(self): return self.config['steps_per_millimeter']
     def pos(self): return self.step_pos
     def modulo_pos(self): return em.modulo(self.step_pos, self.steps_of_turn())
     
-    def setSpeed(self, sleep: float): 
+    def set_speed(self, sleep: float): 
         if sleep > 0: self.step_sleep = sleep
         
-    def setPinsLow(self):
+    def set_pins_low(self):
         for pin in self.config['motor_pins']: GPIO.output( pin, GPIO.LOW )
         
+    def adjust_lazy(self, steps: int, speed: float):
+        direc = em.direction(steps)
+        if direc != self.lazy_direction:
+            self.set_speed(speed)
+            adjustment_steps = self.config['laziness'] * (direc - self.lazy_direction)
+            return self.turn(adjustment_steps, thread=True)
+        else: return None
+
     def step(self, **kwargs):
-        orientation = kwargs.get('orientation', 1) # either 1 or -1
+        direction = kwargs.get('direction', 1) # either 1 or -1
         
-        if not self.ignore_step and orientation != 0:
+        if not self.ignore_step and direction != 0:
             for pinIndex in range(len(self.config['motor_pins'])): 
                 GPIO.output(
                     self.config['motor_pins'][pinIndex], 
@@ -56,8 +66,8 @@ class EasterStepper:
             
             mirror = -1 if self.config.get('mirror-inverted', False) else 1
             
-            self.motor_step_counter = (self.motor_step_counter + orientation * mirror) % len(step_sequence) # count motor_step_counter
-            if kwargs.get('count', True): self.step_pos += orientation
+            self.motor_step_counter = (self.motor_step_counter + direction * mirror) % len(step_sequence) # count motor_step_counter
+            if kwargs.get('count', True): self.step_pos += direction
             
     def turn(self, **kwargs): # step_count < 0 means endless, turn(thread=False, steps=1, count=True)
         if kwargs.get('thread', False):
@@ -74,7 +84,10 @@ class EasterStepper:
             if not count: print('!count is being ignored!')
             i = 0
             while i < step_count or step_count == -1:
-                self.step(orientation=1 if step_count_p > 0 else -1, count=count)
-                
-                if i < step_count-1 or step_count == -1: time.sleep(self.step_sleep)
+                self.step(
+                    direction=1 if step_count_p > 0 else -1, 
+                    count=count
+                )
+                if i < step_count-1 or step_count == -1:
+                    time.sleep(self.step_sleep)
                 i += 1

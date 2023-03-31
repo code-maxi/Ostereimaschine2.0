@@ -88,16 +88,26 @@ def circle(ct: EasterSimulator, **config):
     colorindex = config.get('circle_colorindex', 0)
     fill = config.get('circle_fill', 0)
     res = config.get('circle_res', 32)
+    circle_angleadd = config.get('circle_angleadd', 0)
     
     pcenter = config.get('circle_center', 0)
-    center = config.get('circle_center_coordinate', rad.real * pcenter.real + rad.imag * pcenter.imag * 1j + ct.xy_pos())
+    center = config.get(
+        'circle_center_coordinate', 
+        ct.xy_pos()
+          + rad.real * pcenter.real
+            + rad.imag * pcenter.imag * 1j
+    )
+
+    move_back = config.get('circle_move_back', True)
 
     ct.change_color(colors[colorindex])
+    end_pos: complex
 
     for a in range(res+1):
-        alpha = a / res * 2 * math.pi
+        alpha = a / res * 2 * math.pi + circle_angleadd
         delta = (math.cos(alpha) * rad.real + math.sin(alpha) * rad.imag * 1j)
-        ct.step_to(delta + center, move=(a == 0))
+        end_pos = delta + center
+        ct.step_to(end_pos, move=(a == 0))
 
     if fill > 0:
         substeps = config.get('circle_substeps', ct.xy_stroke_steps())
@@ -111,6 +121,7 @@ def circle(ct: EasterSimulator, **config):
                 'circle_center_coordinate': center
             })
             circle(ct, **new_config)
+        if move_back: ct.step_to(end_pos)
 
 def flower(ct: EasterSimulator, **config):
     center = flower_curve(ct, **config)

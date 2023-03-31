@@ -97,9 +97,9 @@ class EasterControler:
 	def cleanup(self):
 		self.log('cleanup')
 		
-		self.ystepper.setPinsLow()
-		self.xstepper.setPinsLow()
-		self.zstepper.setPinsLow()
+		self.ystepper.set_pins_low()
+		self.xstepper.set_pins_low()
+		self.zstepper.set_pins_low()
 		self.servo.stopPWM()
 		
 		GPIO.cleanup()
@@ -218,8 +218,8 @@ class EasterControler:
 		
 		self.log(f'way to: duration={duration}s')
 		
-		maxstepper.setSpeed(self.config['max_stepper_speed'])
-		if abs(minway) > 1: minstepper.setSpeed(duration / (abs(minway) - 1))
+		maxstepper.set_speed(self.config['max_stepper_speed'])
+		if abs(minway) > 1: minstepper.set_speed(duration / (abs(minway) - 1))
 		
 		self.log(f'stepper sleeps: faster={maxstepper.step_sleep} slower={minstepper.step_sleep} ')
 		
