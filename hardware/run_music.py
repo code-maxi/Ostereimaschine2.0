@@ -87,7 +87,7 @@ def act(ct: EasterSimulator):
     ct.step_to(0, move=True, stay_up=True)
 
 from controller import EasterControler
-sim = EasterSimulator(
+sim = EasterControler(
     {
         'simulator_start_speed': 0,
         'start_color': 'green',

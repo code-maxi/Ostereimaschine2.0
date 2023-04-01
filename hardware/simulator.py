@@ -43,6 +43,7 @@ class EasterSimulator:
         )
     
     def canvas_close(self):
+        self.pendown()
         self.cleanup()
         print('canvas close!')
         
