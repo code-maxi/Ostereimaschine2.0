@@ -16,6 +16,9 @@ class EasterSimulator:
         
         self.x_velocity = self.config['xstepper']['steps_per_millimeter']
         self.y_velocity = self.config['ystepper']['steps_of_turn'] / (math.pi * self.config['egg_height'])
+
+        self.x_stroke_steps = self.x_velocity * self.config['pen_stroke_width']
+        self.y_stroke_steps =  self.x_to_ysteps(self.x_stroke_steps) #TODO!
         
         self.egg_x_steps = round(self.config['egg_length'] * self.x_velocity)
         self.egg_y_steps = self.config['ystepper']['steps_of_turn']
@@ -225,11 +228,9 @@ class EasterSimulator:
     def penup(self):   self.set_pen_up(True)
     def pendown(self): self.set_pen_up(False)
     
-    def x_stroke_steps(self): return self.x_velocity * self.config['pen_stroke_width']
-    def y_stroke_steps(self): return round(self.config['pen_stroke_width'] / (self.config['egg_height'] * math.pi) * self.egg_y_steps) #TODO!
-    def xy_stroke_steps(self): return self.x_stroke_steps() + self.y_stroke_steps() * 1j
+    def xy_stroke_steps(self): return self.x_stroke_steps + self.y_stroke_steps * 1j
         
-    def change_color(self, color: str):
+    def change_color(self, color: str, **kwargs):
         self.log(f"Changing color to {color}...", 0)
         self.current_color = color
         
@@ -277,8 +278,8 @@ class EasterSimulator:
             self.step_to(new_xpos, new_ypos, move=(r == 0))
             
         if kwargs.get('fill', False):
-            sub_steps_x = kwargs.get('sub_steps_x', self.x_stroke_steps()) # getting pen stroke smaller
-            sub_steps_y = kwargs.get('sub_steps_y', self.y_stroke_steps()) # getting pen stroke smaller
+            sub_steps_x = kwargs.get('sub_steps_x', self.x_stroke_steps) # getting pen stroke smaller
+            sub_steps_y = kwargs.get('sub_steps_y', self.y_stroke_steps) # getting pen stroke smaller
             new_xrad = xrad - sub_steps_x
             new_yrad = yrad - sub_steps_y
             max_depth = kwargs.get('maxdepth', sys.maxsize) # getting pen stroke smaller
