@@ -19,7 +19,7 @@ def act(ct: EasterSimulator):
     note_stem_length = ct.y_to_xsteps(note_distance) * 1.5
     note_beam_width = 5
     
-    colors = ['red', 'green', 'blue']
+    colors = ['red', 'green', 'blue', 'orange']
 
     def random_height(): return random.randrange((music_lines-1) * 2) / 2
 
