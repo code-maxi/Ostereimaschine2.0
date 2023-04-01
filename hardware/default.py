@@ -11,7 +11,7 @@ defaultEasterControlerConfig = {
         'motor_pins': [23,24,25,26],
         'start_step_sleep': 0.003,
         'steps_of_turn': 4159,
-        'laziness': 50,
+        'laziness': 25,#50,
         #'wheel_radius': 7.65,
         'name': 'X-Stepper',
         'mirror-inverted': True,
@@ -58,7 +58,7 @@ defaultEasterControlerConfig = {
     'pen_lazy_sleep': 0.05,
     'pen_stroke_width': 1,
     
-    'simulator_window_height': 1000,
+    'simulator_window_height': 750,
     'simulator_window_width': 900,
     'name': 'Unknown',
 #    'simulator_window_height': 600,

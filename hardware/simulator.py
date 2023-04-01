@@ -92,7 +92,8 @@ class EasterSimulator:
     | FERTIG! |
      ‾‾‾‾‾‾‾‾‾‾
     Das Ei "{self.config["name"]}" wurde fertiggestellt.\n    
-    Du kannst es nun vorsichtig aus der Halterung nehmen.   
+    Du kannst es nun vorsichtig aus der Halterung nehmen.
+    Zum Beenden bitte <Ctrl+E> drücken.
         '''
         print('finish')
         if not self.direct_run: self.canvas.info_text(finish_text)

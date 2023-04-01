@@ -112,7 +112,7 @@ class EasterControler(simulator.EasterSimulator):
             
             self.stepper_step_to(delta_steps.real, delta_steps.imag)
             
-            if move: self.pendown()
+            if move and not kwargs.get('stay_up', False): self.pendown()
             if info: self.update_canvas_info(self.canvas_info_pos())
     
     def set_pen_up(self, up: bool):

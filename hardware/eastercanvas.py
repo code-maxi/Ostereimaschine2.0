@@ -12,10 +12,11 @@ class EasterCanvas:
         self.config = config
         
         self.height  = self.config['simulator_window_height']
-        self.width  = self.config['simulator_window_width']
+        self.width   = self.config['simulator_window_width']
+        self.eggwidth   = self.config.get('simulator_egg_width', None)
 
-        if self.width == None: 
-            self.width = self.config['egg_length'] / (self.config['egg_height'] * math.pi) * self.height
+        if self.eggwidth == None: 
+            self.eggwidth = round(self.config['egg_length'] / (self.config['egg_height'] * math.pi) * self.height)
         
         self.stroke_width = self.config['pen_stroke_width'] * 4 * 2
         
@@ -24,7 +25,7 @@ class EasterCanvas:
         self.background = '#ddd'
         self.onclose = onclose
         self.info = {}
-        self.fullscreen = True
+        self.fullscreen = False
         self.infotext = None
         
         self.initialize()
@@ -53,7 +54,8 @@ class EasterCanvas:
             bg="#fff"
         )
         self.window.protocol("WM_DELETE_WINDOW", self.close_me)
-        self.window.bind('<Control-e>', lambda event: self.toggle_fullscreen())
+        self.window.bind('<Control-e>', lambda event: self.close_me())
+        self.window.bind('<Control-f>', lambda event: self.toggle_fullscreen())
 
         self.set_color(self.config['start_color'])
         self.paint_all()
@@ -62,10 +64,14 @@ class EasterCanvas:
         
     def main_loop(self): self.window.mainloop()
 
-    def pos_on_grid(self, pos: complex): 
-        return (pos.real * (self.config['egg_use_percent']/100) + 0.5) * self.width + (1 - pos.imag) * self.height * 1j
+    def pos_on_grid(self, pos: complex):
+        xpos = pos.real * (self.config['egg_use_percent']/100) * self.eggwidth + self.width / 2
+        ypos = (1 - pos.imag) * self.height
+        return xpos + ypos * 1j
         
-    def clear(self): self.canvas.create_rectangle(0, 0, self.width, self.height, fill=self.background)
+    def clear(self):
+        self.canvas.create_rectangle(0, 0, self.width, self.height, fill=self.background)
+        self.canvas.create_rectangle((self.width - self.eggwidth)/2, 0, (self.width + self.eggwidth)/2, self.height, fill='#fff', width=0)
     
     def paint_all(self):
         self.clear_grid()
