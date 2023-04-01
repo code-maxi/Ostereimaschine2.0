@@ -146,10 +146,10 @@ class EasterSimulator:
     def y_percent(self): return self.y_pos() / self.egg_y_steps
 
     def x_to_ysteps(self, xsteps: complex):
-        return round(xsteps.real * self.y_velocity / self.x_velocity) * 1j
+        return xsteps.real * self.y_velocity / self.x_velocity * 1j
     
     def y_to_xsteps(self, ysteps: complex): 
-        return round(ysteps.imag * self.x_velocity / self.y_velocity)
+        return ysteps.imag * self.x_velocity / self.y_velocity
     
     def y_caliber(self):
         xpercent = self.x_pos() / self.egg_x_steps
@@ -162,10 +162,10 @@ class EasterSimulator:
         yminmax = em.abs_minmax(ysteps1, ysteps2)
         yindex = 1 if kwargs.get('long', False) == True else 0
         
-        xsteps = new_pos.real - self.x_pos()
-        ysteps = yminmax[yindex]
+        xsteps = round(new_pos.real - self.x_pos())
+        ysteps = round(yminmax[yindex])
     
-        return (xsteps + ysteps * 1j)
+        return xsteps + ysteps * 1j
         
     def step_to(self, ppos: complex, **kwargs):
         move = kwargs.get('move', False)        
@@ -230,7 +230,7 @@ class EasterSimulator:
     def penup(self):   self.set_pen_up(True)
     def pendown(self): self.set_pen_up(False)
     
-    def xy_stroke_steps(self): return self.x_stroke_steps + self.y_stroke_steps * 1j
+    def xy_stroke_steps(self): return self.x_stroke_steps + self.y_stroke_steps
         
     def change_color(self, color: str, **kwargs):
         self.log(f"Changing color to {color}...", 0)

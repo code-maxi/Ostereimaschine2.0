@@ -25,7 +25,7 @@ class EasterCanvas:
         self.background = '#ddd'
         self.onclose = onclose
         self.info = {}
-        self.fullscreen = False
+        self.fullscreen = not self.config.get('start_fullscreen', True)
         self.infotext = None
         
         self.initialize()

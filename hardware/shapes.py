@@ -140,4 +140,26 @@ def flower(ct: EasterSimulator, **config):
     dotconfig.update({ 'circle_rad': dotrad, 'circle_center': -1 })
     circle(ct, **dotconfig)
 
+def spiral(ct: EasterSimulator, **config):
+    center  = config.get('spiral_center', ct.xy_pos())
+
+    angle  = config.get('spiral_start_angle', 0)
+    mirror  = config.get('spiral_mirror', 1 + 1j)
+    max_angle = config.get('spiral_max_angle', 8 * math.pi)
+    min_angle = config.get('spiral_min_angle', angle)
+
+    radius_increase = config.get('spiral_radius_increase', 1 + 1j)
+    angle_increase = config.get('spiral_angle_increase', math.pi / 8)
+    radius = 0
+
+    while angle >= min_angle and angle <= max_angle:
+        radius = angle * radius_increase
+        delta = math.sin(angle) * radius.real * mirror.real + math.cos(angle) * radius.imag * mirror.imag * 1j
+        #print(f'spiral delta={delta} angle={180/math.pi * angle} max_angle={180/math.pi * max_angle} angle_increase={180/math.pi * angle_increase}')
+        ct.step_to(center + delta)
+
+        angle += angle_increase
+
+    return radius
+
 

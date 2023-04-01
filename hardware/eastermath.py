@@ -41,11 +41,14 @@ def color_to_hex(color):
     elif color == 'green': res = '#008000'
     elif color == 'blue': res = '#00f'
     elif color == 'orange': res = '#ffa500'
+    elif color == 'purple': res = '#800080'
     return res
 
 def round_complex(z: complex, *args):
     digits = get_save(args, 0, 0)
     return round(z.real, digits) + round(z.imag, digits) * 1j
+
+def comlpex_scalar(x: complex, y: complex): return x.real * y.real + x.imag * y.imag * 1j
 
 def relative_path(path: str):
     absolute = os.path.realpath(__file__).split('/')
@@ -53,7 +56,6 @@ def relative_path(path: str):
     return '/'.join(absolute) + '/' + path
 
 def random_item(array: list): return array[random.randrange(0, len(array))]
-
 
 '''
 
