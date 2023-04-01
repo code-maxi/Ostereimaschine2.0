@@ -83,6 +83,7 @@ def flower_curve(ct: EasterSimulator, **config):
 
 def circle(ct: EasterSimulator, **config):
     rad = config.get('circle_rad')
+    move = config.get('circle_move', False)
 
     colors = config.get('circle_colors', [ct.current_color])
     colorindex = config.get('circle_colorindex', 0)
@@ -107,7 +108,7 @@ def circle(ct: EasterSimulator, **config):
         alpha = a / res * 2 * math.pi + circle_angleadd
         delta = (math.cos(alpha) * rad.real + math.sin(alpha) * rad.imag * 1j)
         end_pos = delta + center
-        ct.step_to(end_pos, move=(a == 0))
+        ct.step_to(end_pos, move=(move and a == 0))
 
     if fill > 0:
         substeps = config.get('circle_substeps', ct.xy_stroke_steps())
@@ -118,7 +119,8 @@ def circle(ct: EasterSimulator, **config):
                 'circle_rad': rad,
                 'circle_colorindex': (colorindex + 1) % len(colors),
                 'circle_fill': fill - 1,
-                'circle_center_coordinate': center
+                'circle_center_coordinate': center,
+                'circle_move': False
             })
             circle(ct, **new_config)
         if move_back: ct.step_to(end_pos)

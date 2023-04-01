@@ -78,7 +78,7 @@ class EasterCanvas:
         for xrow in range(-5, 6):
             pos = xrow / 10
             xpos = self.pos_on_grid(pos)
-            print(f'pos {pos} real {xpos.real} img {xpos.imag} xpos {xpos}')
+            #print(f'pos {pos} real {xpos.real} img {xpos.imag} xpos {xpos}')
 
             self.canvas.create_line(xpos.real, 0, xpos.real, self.height, width=2 if xrow == 0 else 1, fill='#000')
             self.canvas.create_text(xpos.real, 0, text=f'  {xrow*10}% ', fill=self.grid_fill, anchor='nw')

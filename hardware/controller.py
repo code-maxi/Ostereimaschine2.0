@@ -1,3 +1,4 @@
+import keyboard
 import time
 import RPi.GPIO as GPIO
 import stepper
@@ -85,16 +86,29 @@ class EasterControler(simulator.EasterSimulator):
 
         delta_steps = super().step_to(ppos, **new_kwargs)
         
-        if delta_steps != None: 
+        if delta_steps != None:
+            xthread = None
+            
             if move:
                 self.penup()
                 self.xstepper.lazy_direction = 0
-                        
-            if not move:
+            
+            else: xthread = self.xstepper.adjust_lazy(delta_steps.real, self.config['max_stepper_speed'])
+            '''else:
+                print(f'adjusting laziness {self.xstepper.lazy_direction} | {self.ystepper.lazy_direction}')
                 xthread = self.xstepper.adjust_lazy(delta_steps.real, self.config['max_stepper_speed'])
-                ythread = self.ystepper.adjust_lazy(delta_steps.imag, self.config['max_stepper_speed'])
+                ythread = 
                 if xthread != None: xthread.join()
                 if ythread != None: ythread.join()
+                print(f'adjusting laziness finished {self.xstepper.lazy_direction} | {self.ystepper.lazy_direction}')'''
+                
+            ythread = self.ystepper.adjust_lazy(delta_steps.imag, self.config['max_stepper_speed'])
+            if xthread != None: xthread.join()
+            if ythread != None: ythread.join()
+                
+            #time.sleep(0.5)
+            
+            print('turn begins...')    
             
             self.stepper_step_to(delta_steps.real, delta_steps.imag)
             
@@ -111,7 +125,7 @@ class EasterControler(simulator.EasterSimulator):
             self.servo.setPos(newPos)
             time.sleep(self.config.get('penup_sleep', 0))
         
-    def change_color(self, color: str):
+    def change_color(self, color: str, **kwargs):
         current_pos = self.config['color_pos'][self.current_color]
         new_pos     = self.config['color_pos'][color]
         
@@ -122,7 +136,7 @@ class EasterControler(simulator.EasterSimulator):
             self.log(f"steps: {steps}x")
             self.zstepper.turn(steps=steps)
             
-            self.pendown()
+            if not kwargs.get('stay_up', False): self.pendown()
             
         super().change_color(color)
     

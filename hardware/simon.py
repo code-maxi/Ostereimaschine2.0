@@ -100,15 +100,16 @@ def act(ct: EasterSimulator):
                 ct.change_color(colors[s % len(colors)])
                 ct.update_canvas_info({'star': f'egg   = {s} | {d}'})
                 egg(egg_size, egg_fill)
-        
+    ct.pendown()    
+    
     stars()
     eggs()
     pattern()
     
     ct.go_home()
 
-#from controller import EasterControler
-sim = EasterSimulator(
+from controller import EasterControler
+sim = EasterControler(
     {
         'simulator_start_speed': 0.0,
         'start_color': 'red',

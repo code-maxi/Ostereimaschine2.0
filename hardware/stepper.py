@@ -51,7 +51,8 @@ class EasterStepper:
         if direc != self.lazy_direction:
             self.set_speed(speed)
             adjustment_steps = self.config['laziness'] * (direc - self.lazy_direction)
-            return self.turn(adjustment_steps, thread=True)
+            self.lazy_direction = direc
+            return self.turn(steps=adjustment_steps, thread=True, count=False)
         else: return None
 
     def step(self, **kwargs):

@@ -206,7 +206,7 @@ class EasterSimulator:
         
     def go_home(self):
         self.penup()
-        self.go_to(0,0, move=True)
+        self.go_to(0, move=True)
         
     def step_to_multiple(poses, **kwargs):
         for pos in poses: self.step_to(pos, **kwargs)
@@ -216,7 +216,7 @@ class EasterSimulator:
             self.ispenup = up
             self.change_color(self.current_color)
             time.sleep(self.get_simulator_speed() * 4)
-            if self.using_canvas(): self.canvas.set_color(None if up else self.pen_color)
+            if self.using_canvas(): self.canvas.set_color(None if up else self.current_color)
             
             return True
             
