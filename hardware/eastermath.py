@@ -28,6 +28,8 @@ def egg_caliber(xpercent: float, max_caliber: float):
     fac = xpercent/50
     radius = egg_form(fac) * max_caliber
     return radius
+
+def in_range(n: float, minmax: complex): return n >= minmax.real and n <= minmax.imag
     
 def direction(n: float): return -1 if n < 0 else (0 if n == 0 else 1)
 

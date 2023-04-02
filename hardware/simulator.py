@@ -23,8 +23,8 @@ class EasterSimulator:
         self.egg_x_steps = round(self.config['egg_length'] * self.x_velocity)
         self.egg_y_steps = self.config['ystepper']['steps_of_turn']
         
-        self.egg_border_length = self.config['egg_use_percent'] / 100 * self.config['egg_length']
-        self.egg_border_steps = round(self.egg_border_length * self.x_velocity)
+        self.egg_xborder_length = self.config['egg_use_percent'] / 100 * self.config['egg_length']
+        self.egg_xborder_steps = round(self.egg_xborder_length * self.x_velocity)
         
         self.simulator_pos = (0 + 0j)
         self.simulator_speed = self.config['simulator_start_speed']
@@ -139,10 +139,13 @@ class EasterSimulator:
     def xy_pos(self): return self.simulator_pos
     def x_pos(self): return self.xy_pos().real
     def y_pos(self): return self.xy_pos().imag
+
+    def way_to_xsteps(self, way: float): return self.x_velocity * way
+    def way_to_ysteps(self, way: float): return self.y_velocity * way * 1j
     
     def get_simulator_speed(self): return self.simulator_speed
     
-    def x_percent(self): return self.x_pos() / self.egg_border_steps
+    def x_percent(self): return self.x_pos() / self.egg_xborder_steps
     def y_percent(self): return self.y_pos() / self.egg_y_steps
 
     def x_to_ysteps(self, xsteps: complex):
@@ -178,7 +181,7 @@ class EasterSimulator:
                 
         if abs(delta_steps) > 0:
             if self.using_canvas():
-                canvas_pos = (delta_steps.real / self.egg_border_steps + delta_steps.imag / self.egg_y_steps * 1j)
+                canvas_pos = (delta_steps.real / self.egg_xborder_steps + delta_steps.imag / self.egg_y_steps * 1j)
                 #print(f'step_to canvas {canvas_pos}')
                 self.canvas.go_to(
                     canvas_pos, 
@@ -201,7 +204,7 @@ class EasterSimulator:
         #print(f'go_to pos {pos}')
         
         new_pos = em.round_complex(
-            pos.real / 100 * self.egg_border_steps
+            pos.real / 100 * self.egg_xborder_steps
             + round(em.modulo(pos.imag, 100) / 100 * self.egg_y_steps) * 1j
         )
         

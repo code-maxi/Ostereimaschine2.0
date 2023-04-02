@@ -35,7 +35,7 @@ class EasterControler(simulator.EasterSimulator):
     def x_pos(self): return self.xstepper.pos()
     def y_pos(self): return self.ystepper.modulo_pos()
         
-    def x_percent(self): return (self.x_pos() / self.egg_border_steps) * 100
+    def x_percent(self): return (self.x_pos() / self.egg_xborder_steps) * 100
     def y_percent(self): return (self.y_pos() / self.ystepper.steps_of_turn()) * 100
     
     def get_simulator_speed(self): return 0 # ignore simulator_speed

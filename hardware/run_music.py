@@ -8,7 +8,7 @@ import random
 
 def act(ct: EasterSimulator):
     music_lines = 5
-    music_distance = round(ct.egg_border_steps * 0.6 / music_lines)
+    music_distance = round(ct.egg_xborder_steps * 0.6 / music_lines)
     music_x_offset = - (music_lines-1) * music_distance / 2 * 1.2
     
     note_number = 12
@@ -16,7 +16,7 @@ def act(ct: EasterSimulator):
 
     note_dot_width = music_distance/2
     note_dot_rad = note_dot_width + ct.x_to_ysteps(note_dot_width * 1.2)
-    note_stem_length = ct.egg_border_steps * 0.35
+    note_stem_length = ct.egg_xborder_steps * 0.35
     note_beam_width = 5
     small_dot_distance = - note_dot_rad * 0.8
     small_dot_width = 70

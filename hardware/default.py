@@ -1,3 +1,8 @@
+from screeninfo import get_monitors
+monitors = get_monitors()
+default_height = monitors[0].height - 100
+default_width = monitors[0].width / 2
+
 defaultEasterControlerConfig = {
     'ystepper': {
         'motor_pins': [4,17,27,22],
@@ -58,8 +63,8 @@ defaultEasterControlerConfig = {
     'pen_lazy_sleep': 0.05,
     'pen_stroke_width': 1,
     
-    'simulator_window_height': 750,
-    'simulator_window_width': 900,
+    'simulator_window_height': default_height,
+    'simulator_window_width': default_width,
     'name': 'Unknown',
 #    'simulator_window_height': 600,
     'simulator_on': True,

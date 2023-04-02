@@ -19,9 +19,9 @@ def act(ct: EasterSimulator):
     egg_res = 40
     egg_fill = 2
     egg_sub = star_wsub + star_hsub * 2
-    egg_size = ct.egg_border_steps/4 - star_width/2 + star_height
+    egg_size = ct.egg_xborder_steps/4 - star_width/2 + star_height
     
-    left_line = egg_size.real - ct.egg_border_steps/2
+    left_line = egg_size.real - ct.egg_xborder_steps/2
     
     sin_seg = 15
     sin_width = egg_size.real * 0.5

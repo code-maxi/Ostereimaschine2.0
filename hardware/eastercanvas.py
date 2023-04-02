@@ -21,6 +21,7 @@ class EasterCanvas:
         self.stroke_width = self.config['pen_stroke_width'] * 4 * 2
         
         self.pen_pos = 0j
+        self.pen_color = 'notset'
         self.grid_fill = '#333'
         self.background = '#ddd'
         self.onclose = onclose
@@ -202,13 +203,15 @@ class EasterCanvas:
             
     def set_color(self, color):
         #print(f'canvas change color to {color}')
-        self.pen_color = em.color_to_hex(color)
-        self.info.update({
-            'color': f'color = {color if color != None else "–"}',
-            'pen':   f'pen   = {"down" if color != None else "up"}'
-        })
-        self.paint_color()
-        self.paint_info()
+        newcolor = em.color_to_hex(color)
+        if self.pen_color != newcolor:
+            self.pen_color = newcolor
+            self.info.update({
+                'color': f'color = {color if color != None else "–"}',
+                'pen':   f'pen   = {"down" if color != None else "up"}'
+            })
+            self.paint_color()
+            self.paint_info()
         
     def update_info(self, info: dict):
         self.info.update(info)
