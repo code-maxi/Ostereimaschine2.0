@@ -12,7 +12,7 @@ def act(ct: EasterSimulator):
 
     aviable_colors = [ 'red', 'orange', 'green', 'blue']
 
-    triangle_width = ct.egg_xborder_steps * 0.3
+    triangle_width = ct.egg_xborder_steps * 0.25
 
     triangle_number = 12
     triangle_fill = 2
@@ -27,9 +27,9 @@ def act(ct: EasterSimulator):
     
     mm_way = ct.way_to_xsteps(1)
 
-    spiral_number = 6
-    spiral_width = ct.egg_xborder_steps * 0.3
-    spiral_max_angle = 4 * math.pi
+    spiral_number = 4
+    spiral_width = ct.egg_xborder_steps - 2*triangle_width - 2*mm_way
+    spiral_max_angle = 6 * math.pi
     spiral_increase = math.pi / 16
     spiral_radius_increase = (1 + ct.x_to_ysteps(1)) * spiral_width / 2 / spiral_max_angle
     spiral_radius = spiral_max_angle * spiral_radius_increase
@@ -46,25 +46,30 @@ def act(ct: EasterSimulator):
     sin_res = 8
     sin_dot_fill = 1
 
-    def triangles():
-        for i in range(triangle_number):
-            pos = triangles_xpos + triangle_height * i
-            ct.change_color(aviable_colors[i % len(aviable_colors)], stay_up=True)
-            ct.step_to(pos, move=True)
+    def triangles(xf: float):
+        for typ in ['tri', 'circ']:
+            for i in range(triangle_number):
+                pos = triangles_xpos * xf + triangle_height * i
+                ct.change_color(aviable_colors[i % len(aviable_colors)], stay_up=True)
 
-            for fill in range(triangle_fill):
-                for tpos in triangle_poses:
-                    delta = triangle_shrink ** fill * em.comlpex_scalar(tpos, triangle_width + triangle_height)
-                    ct.step_to(pos + delta)
+                if typ == 'tri':
+                    ct.step_to(pos, move=True)
 
-            ct.step_to(pos + triangle_width * 0.75 + triangle_height / 2, move=True)
+                    for fill in range(triangle_fill):
+                        for tpos in triangle_poses:
+                            delta = triangle_shrink ** fill * em.comlpex_scalar(tpos, triangle_width * xf + triangle_height)
+                            ct.step_to(pos + delta)
+
+                if typ == 'circ':
+                    ct.step_to(pos + triangle_width * 0.75 * xf + triangle_height / 2, move=True)
             
-            shapes.circle(
-                ct,
-                circle_rad = triangle_dot_rad,
-                circle_fill = triangle_dot_fill,
-                circle_res = 8
-            )
+                    shapes.circle(
+                        ct,
+                        circle_rad = triangle_dot_rad,
+                        circle_fill = triangle_dot_fill,
+                        circle_res = 8
+                    )
+            
 
     spirals_pos = ct.xy_pos()
     def spirals():
@@ -129,16 +134,17 @@ def act(ct: EasterSimulator):
                     ct.step_to(sin_xpos + delta, move=True)
 
 
-    triangles()
+    triangles(1)
     spirals()
-    line_dots()
-    sin_dots()
+    triangles(-1)
+    #line_dots()
+    #sin_dots()
 
 #from controller import EasterControler
 sim = EasterSimulator(
     {
         'egg_use_percent': 65,
-        'simulator_start_speed': 0.05,
+        'simulator_start_speed': 0.0,
         'start_color': 'green',
         'penup_offset': 0.25,
         'color_pos': {
@@ -149,7 +155,7 @@ sim = EasterSimulator(
             'orange': 4
         },
         #'simulator_window_width': None,
-        'name': 'Spiralen und Dreiecke',
+        'name': 'Spiralen und Dreiecke Typ 2',
         'start_fullscreen': False,
         #'simulator_window_height': 1000
     }
