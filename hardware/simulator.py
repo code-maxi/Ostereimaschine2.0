@@ -60,6 +60,8 @@ class EasterSimulator:
         self.escape = keyboard.is_pressed(self.escapekey)
         self.set_pen_up(penup)
         
+    def set_status_state(self, state): pass
+        
     def run_egg(self):
         self.xkeys = ('a', 'd')
         self.ykeys = ('r', 'f')
@@ -82,12 +84,15 @@ class EasterSimulator:
         self.canvas.info_text(adjust_text)
         self.canvas.window.update()
         
+        self.set_status_state(0)
         self.escape = self.direct_run
         while not self.escape: self.adjust_loop()
         
         self.canvas.paint_all()
         
+        self.set_status_state(1)
         self.act(self)
+        self.set_status_state(2)
         
         finish_text = f'''
     | FERTIG! |

@@ -3,9 +3,8 @@ import RPi.GPIO as GPIO
 class EasterServo:
     def __init__(self, config: dict):
         self.config = config
-        self.setup()
         
-    def setup(self):
+    def setup_pins(self):
         print(f"Setting up servo motor on GPIO{self.config['controlPin']} with start pos {self.config['startPos']}...")
         
         GPIO.setup(self.config['controlPin'], GPIO.OUT)

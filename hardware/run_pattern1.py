@@ -19,23 +19,25 @@ def act(ct: EasterSimulator):
     triangle_shrink = 0.6
     triangle_height = ct.egg_y_steps / triangle_number * 1j
     triangle_poses = [0, -0.5j, 1, 0.5j, 0]
-    triangle_dot_rad = ct.xy_stroke_steps() * 2
-    triangle_dot_fill = 1
+    triangle_dot_rad = ct.xy_stroke_steps() * 1
+    triangle_dot_fill = 0
     triangles_xpos = ct.egg_xborder_steps * 0.5 - triangle_width
 
     print(triangle_dot_rad)
+    
+    mm_way = ct.way_to_xsteps(1)
 
-    spiral_number = 5
-    spiral_width = ct.egg_xborder_steps * 0.35
+    spiral_number = 6
+    spiral_width = ct.egg_xborder_steps * 0.3
     spiral_max_angle = 4 * math.pi
     spiral_increase = math.pi / 16
     spiral_radius_increase = (1 + ct.x_to_ysteps(1)) * spiral_width / 2 / spiral_max_angle
     spiral_radius = spiral_max_angle * spiral_radius_increase
-    spiral_xpos = triangles_xpos - spiral_radius.real
+    spiral_xpos = triangles_xpos - spiral_radius.real - mm_way
 
     line_dots_number = 30
     line_change_color_number = round(line_dots_number/len(aviable_colors))
-    line_dot_xpos = spiral_xpos - spiral_radius.real - ct.way_to_xsteps(1)
+    line_dot_xpos = spiral_xpos - spiral_radius.real - 2*mm_way
 
     sin_width = ct.egg_xborder_steps * 0.25
     sin_xpos = line_dot_xpos - ct.way_to_xsteps(2) - sin_width/2
@@ -99,31 +101,32 @@ def act(ct: EasterSimulator):
             ct.step_to(line_dot_xpos + ydelta * i, move=True)
             
     def sin_dots():
-        for i in range(sin_number * sin_res + 1):
-            ct.change_color(aviable_colors[int(i / sin_res / 2) % len(aviable_colors)])
+        for typ in ['sin', 'dot']:
+            for i in range(sin_number * sin_res + 1):
+                ct.change_color(aviable_colors[int(i / sin_res / 2) % len(aviable_colors)])
 
-            alpha = i / sin_res * math.pi
-            delta = math.sin(alpha) * sin_width / 2 + i / (sin_number * sin_res) * ct.egg_y_steps * 1j    
-            
-            ct.step_to(sin_xpos + delta, move=i == 0)
-            
-            extemata = em.in_range(abs(math.cos(alpha)), 0.01j)
+                alpha = i / sin_res * math.pi
+                delta = math.sin(alpha) * sin_width / 2 + i / (sin_number * sin_res) * ct.egg_y_steps * 1j    
+                
+                if typ == 'sin' or i == 0: ct.step_to(sin_xpos + delta, move=i == 0)
+                
+                extemata = em.in_range(abs(math.cos(alpha)), 0.01j)
 
-            if extemata:
-                direc = em.direction(-math.sin(alpha))
-                xdelta = direc * sin_width / 2
-                print(f'extremata direc={direc}')
+                if extemata and typ == 'dot':
+                    direc = em.direction(-math.sin(alpha))
+                    xdelta = direc * sin_width *0.7
+                    print(f'extremata direc={direc}')
 
-                ct.step_to(xdelta, rel=True, move=True)
+                    ct.step_to(sin_xpos + delta + xdelta, move=True)
 
-                shapes.circle(
-                    ct,
-                    circle_rad = sin_dot_rad,
-                    circle_fill = sin_dot_fill,
-                    circle_res = 8
-                )
+                    shapes.circle(
+                        ct,
+                        circle_rad = sin_dot_rad,
+                        circle_fill = sin_dot_fill,
+                        circle_res = 8
+                    )
 
-                ct.step_to(sin_xpos + delta, move=True)
+                    ct.step_to(sin_xpos + delta, move=True)
 
 
     triangles()
@@ -131,23 +134,24 @@ def act(ct: EasterSimulator):
     line_dots()
     sin_dots()
 
-#from controller import EasterControler
-sim = EasterSimulator(
+from controller import EasterControler
+sim = EasterControler(
     {
-        'simulator_start_speed': 0.0,
+        'egg_use_percent': 65,
+        'simulator_start_speed': 0.05,
         'start_color': 'green',
         'penup_offset': 0.25,
         'color_pos': {
-            'purple': 0,
+            'black': None,
             'red': 1,
             'green': 2,
             'blue': 3,
             'orange': 4
         },
         #'simulator_window_width': None,
-        'name': 'Musiknoten',
-        'start_fullscreen': False,
+        'name': 'Spiralen und Dreiecke',
+        #'start_fullscreen': False,
         #'simulator_window_height': 1000
     }
 )
-sim.run(act=act, gui=True, console=True, direct_run=True)
+sim.run(act=act, gui=True, console=True, direct_run=False)

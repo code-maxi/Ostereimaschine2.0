@@ -5,6 +5,7 @@ import stepper
 import servo
 import eastermath as em
 import simulator
+import leds
 
 class EasterControler(simulator.EasterSimulator):
     def __init__(self, config: dict):
@@ -19,11 +20,18 @@ class EasterControler(simulator.EasterSimulator):
          
         GPIO.setmode( GPIO.BCM )
 
-        self.ystepper = stepper.EasterStepper(self.config['ystepper'])
         self.xstepper = stepper.EasterStepper(self.config['xstepper'])
+        self.ystepper = stepper.EasterStepper(self.config['ystepper'])
         self.zstepper = stepper.EasterStepper(self.config['zstepper'])
         
         self.servo = servo.EasterServo(self.config['servo'])
+        self.leds = leds.EasterLEDs(self.config)
+        
+        self.xstepper.setup_pins()
+        self.ystepper.setup_pins()
+        self.zstepper.setup_pins()
+        self.servo.setup_pins()
+        self.leds.setup_pins()
         
     def stepper(self, name: str):
         stepper = None
@@ -139,6 +147,10 @@ class EasterControler(simulator.EasterSimulator):
             if not kwargs.get('stay_up', False): self.pendown()
             
         super().change_color(color)
+        
+    def set_status_state(self, state):
+        print('controler set status to ' + str(state))
+        self.leds.state = state
     
     def cleanup(self):
         self.log('cleanup', 10)
@@ -147,6 +159,7 @@ class EasterControler(simulator.EasterSimulator):
         self.xstepper.set_pins_low()
         self.zstepper.set_pins_low()
         self.servo.stopPWM()
+        self.leds.cleanup()
         
         GPIO.cleanup()
         

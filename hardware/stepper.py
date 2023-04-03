@@ -25,8 +25,6 @@ class EasterStepper:
         self.step_sleep = self.config.get('start_step_sleep', 0.003)
         self.ignore_step = False
         
-        self.setup_pins()
-        
     def __str__(self): return self.config['name'] + str(self.config['motor_pins'])
     def log(self, o): print(f"{self.__str__()}: {o}")
         
