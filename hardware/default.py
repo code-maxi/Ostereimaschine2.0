@@ -8,7 +8,7 @@ defaultEasterControlerConfig = {
         'motor_pins': [4,17,27,22],
         'start_step_sleep': 0.003,
         'steps_of_turn': 4110, # 4110 +- 50 Abweichung
-        'mirror-inverted': True, # NEW!
+        #'mirror-inverted': True, # NEW!
         'laziness': 25,
         'name': 'Y-Stepper'
     },
@@ -16,7 +16,7 @@ defaultEasterControlerConfig = {
         'motor_pins': [23,24,25,26],
         'start_step_sleep': 0.003,
         'steps_of_turn': 4159,
-        'laziness': 25,#50,
+        'laziness': 50,#50,
         #'wheel_radius': 7.65,
         'name': 'X-Stepper',
         'mirror-inverted': True,
@@ -38,11 +38,14 @@ defaultEasterControlerConfig = {
         'startPos': 0.75
     },
     
+    'servo_delay': 0.5,
+    'servo_times': 100,
+    
     'egg_length': 58.5,
     'egg_height': 41,
     'egg_use_percent': 70,
     
-    'max_stepper_speed': 0.0025,
+    'max_stepper_speed': 0.003,
     
     'color_pos': {
         'black': 0,
@@ -61,7 +64,7 @@ defaultEasterControlerConfig = {
     'penup_sleep': 0.25,
     
     'pen_lazy_sleep': 0.05,
-    'pen_stroke_width': 1,
+    'pen_stroke_width': 2,
     
     'led_sleep': 0.5,
     'status_leds': {

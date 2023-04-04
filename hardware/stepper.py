@@ -24,6 +24,7 @@ class EasterStepper:
         
         self.step_sleep = self.config.get('start_step_sleep', 0.003)
         self.ignore_step = False
+        self.adjust_count = 0
         
     def __str__(self): return self.config['name'] + str(self.config['motor_pins'])
     def log(self, o): print(f"{self.__str__()}: {o}")
@@ -49,6 +50,10 @@ class EasterStepper:
         if direc != self.lazy_direction:
             self.set_speed(speed)
             adjustment_steps = self.config['laziness'] * (direc - self.lazy_direction)
+            
+            self.last_direction = adjustment_steps
+            self.adjust_count += adjustment_steps
+            
             self.lazy_direction = direc
             return self.turn(steps=adjustment_steps, thread=True, count=False)
         else: return None

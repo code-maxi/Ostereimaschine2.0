@@ -18,10 +18,11 @@ class EasterCanvas:
         if self.eggwidth == None: 
             self.eggwidth = round(self.config['egg_length'] / (self.config['egg_height'] * math.pi) * self.height)
         
-        self.stroke_width = self.config['pen_stroke_width'] * 4 * 2
+        self.stroke_width = self.config['pen_stroke_width'] * 3
         
         self.pen_pos = 0j
         self.pen_color = 'notset'
+        self.pen_up = False
         self.grid_fill = '#333'
         self.background = '#ddd'
         self.onclose = onclose
@@ -67,7 +68,7 @@ class EasterCanvas:
 
     def pos_on_grid(self, pos: complex):
         xpos = pos.real * (self.config['egg_use_percent']/100) * self.eggwidth + self.width / 2
-        ypos = (1 - pos.imag) * self.height
+        ypos = pos.imag * self.height # (1 - pos.imag) * self.height
         return xpos + ypos * 1j
         
     def clear(self):
@@ -133,12 +134,15 @@ class EasterCanvas:
                 xpos = offset
                 ypos = (offset + size) * i + offset
                 hex_color = em.color_to_hex(color)
+                width = (8 if self.pen_up else 0) if self.pen_color == hex_color else 16
+                #print(f'color {color} width {width} penup {self.pen_up}')
+                
                 self.canvas.create_rectangle(
                     xpos, ypos, 
                     xpos + size, ypos + size,
                     fill=hex_color,
-                    outline=hex_color if self.pen_color == hex_color and hex_color != None else '#fff',
-                    width=10
+                    outline='#fff',
+                    width=width
                 )
                 
     def paint_text_box(self, **kwargs):
@@ -219,6 +223,18 @@ class EasterCanvas:
         
     def quit(self): self.window.quit()
     
+    def set_pen_up(self, up: bool):
+        if up != self.pen_up:
+            if not up:
+                display_penpos = self.pos_on_grid(self.pen_pos)
+                self.canvas.create_rectangle(
+                    display_penpos.real - self.stroke_width / 2, display_penpos.imag - self.stroke_width / 2,
+                    display_penpos.real + self.stroke_width / 2, display_penpos.imag + self.stroke_width / 2, 
+                    fill=self.pen_color, outline='#000', width=1
+                )
+            self.pen_up = up
+            self.paint_color()
+    
     def go_to(self, deltapos: complex, move: bool, info: dict, paint_info: bool):
         if abs(deltapos) > 0:
             self.info.update(info)
@@ -229,12 +245,6 @@ class EasterCanvas:
             display_newpos = self.pos_on_grid(new_pos)
         
             if move:
-                #print('move')
-                self.canvas.create_rectangle(
-                    display_newpos.real - self.stroke_width / 2, display_newpos.imag - self.stroke_width / 2,
-                    display_newpos.real + self.stroke_width / 2, display_newpos.imag + self.stroke_width / 2, 
-                    fill=self.pen_color
-                )
                 self.pen_pos = new_pos
                 
             else:

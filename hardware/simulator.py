@@ -63,9 +63,9 @@ class EasterSimulator:
     def set_status_state(self, state): pass
         
     def run_egg(self):
-        self.xkeys = ('a', 'd')
+        self.xkeys = ('d', 'a')
         self.ykeys = ('r', 'f')
-        self.zkeys = ('w', 's')
+        self.zkeys = ('s', 'w')
         self.upkey = 'u'
         self.escapekey = 'enter'
     
@@ -176,7 +176,8 @@ class EasterSimulator:
         return xsteps + ysteps * 1j
         
     def step_to(self, ppos: complex, **kwargs):
-        move = kwargs.get('move', False)        
+        move = kwargs.get('move', False)
+        color = kwargs.get('color', None)
         new_pos = ppos + self.xy_pos() if kwargs.get('rel', False) else ppos
         delta_steps = self.delta_steps(new_pos, long=kwargs.get('long', False))
 
@@ -189,8 +190,10 @@ class EasterSimulator:
                 canvas_pos = (delta_steps.real / self.egg_xborder_steps + delta_steps.imag / self.egg_y_steps * 1j)
                 #print(f'step_to canvas {canvas_pos}')
                 self.canvas.go_to(
-                    canvas_pos, 
-                    move, self.canvas_info_pos(), kwargs.get('info', False)
+                    canvas_pos,
+                    move,
+                    self.canvas_info_pos(),
+                    kwargs.get('info', False)
                 )
                 
                 speed = self.get_simulator_speed()
@@ -198,6 +201,8 @@ class EasterSimulator:
                     length = abs(delta_steps)
                     sleep = length / 1000 * speed
                     time.sleep(sleep)
+                    
+                if color != None: self.change_color(color, stayup=move)
                     
             return delta_steps
         else: return None
@@ -218,8 +223,8 @@ class EasterSimulator:
         self.step_to(new_pos, **kwargs)
         
     def go_home(self):
-        self.penup()
-        self.go_to(0, move=True)
+        self.change_color(self.config['start_color'], stay_up=True)
+        self.go_to(0, move=True, stay_up=True)
         
     def step_to_multiple(poses, **kwargs):
         for pos in poses: self.step_to(pos, **kwargs)
@@ -227,9 +232,8 @@ class EasterSimulator:
     def set_pen_up(self, up: bool):
         if up != self.ispenup:
             self.ispenup = up
-            self.change_color(self.current_color)
             time.sleep(self.get_simulator_speed() * 4)
-            if self.using_canvas(): self.canvas.set_color(None if up else self.current_color)
+            if self.using_canvas(): self.canvas.set_pen_up(up)
             
             return True
             
@@ -241,10 +245,12 @@ class EasterSimulator:
     def xy_stroke_steps(self): return self.x_stroke_steps + self.y_stroke_steps
         
     def change_color(self, color: str, **kwargs):
-        self.log(f"Changing color to {color}...", 0)
-        self.current_color = color
-        
-        if self.using_canvas(): self.canvas.set_color(self.current_color)
+        new_pos = self.config['color_pos'].get(color, None)
+        if new_pos != None:
+            self.log(f"Changing color to {color}...", 0)
+            if self.using_canvas(): self.canvas.set_color(color)
+            
+        return new_pos        
         
     def update_canvas_info(self, info: dict):
         if self.using_canvas(): self.canvas.update_info(info)

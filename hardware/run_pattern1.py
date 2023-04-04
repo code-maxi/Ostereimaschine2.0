@@ -49,7 +49,7 @@ def act(ct: EasterSimulator):
     def triangles():
         for i in range(triangle_number):
             pos = triangles_xpos + triangle_height * i
-            ct.change_color(aviable_colors[i % len(aviable_colors)], stay_up=True)
+            ct.change_color(aviable_colors[i % len(aviable_colors)], stayup=True)
             ct.step_to(pos, move=True)
 
             for fill in range(triangle_fill):
@@ -71,7 +71,7 @@ def act(ct: EasterSimulator):
         for spiral_index in range(spiral_number):
             ypos = spiral_xpos + spiral_index / spiral_number * ct.egg_y_steps * 1j
             
-            ct.change_color(aviable_colors[spiral_index % len(aviable_colors)], stay_up=True)
+            ct.change_color(aviable_colors[spiral_index % len(aviable_colors)], stayup=True)
             ct.step_to(spirals_pos + ypos, move=True)
             
             shapes.spiral(
