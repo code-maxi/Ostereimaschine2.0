@@ -68,8 +68,9 @@ def heart(ct: EasterSimulator, **config):
     if fill > 0:
         subsize = config.get('heart_subsize', ct.xy_stroke_steps() * turn_vec)
         halffill = config.get('heart_halffill', -1)
+        minsize = config.get('heart_minsize', subsize)
         new_size = size - subsize
-        if new_size.real > 0 and new_size.imag > 0:
+        if em.complex_bigger(new_size, minsize):
             ct.step_to(subsize.real / 2 * turn_vec, rel=True)
             new_config = dict(config)
             new_config.update({

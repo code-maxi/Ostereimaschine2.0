@@ -48,7 +48,6 @@ class EasterControler(simulator.EasterSimulator):
     
     def get_simulator_speed(self): return 0 # ignore simulator_speed
 
-
     def adjust_loop(self):
         super().adjust_loop()
     
@@ -60,7 +59,7 @@ class EasterControler(simulator.EasterSimulator):
         self.xstepper.step(direction=xdirection, count=False)
         self.ystepper.step(direction=ydirection, count=False)
         
-    def stepper_step_to(self, xsteps: int, ysteps: int):        
+    def stepper_step_to(self, xsteps: int, ysteps: int):   
         if xsteps != 0 or ysteps != 0:
             steps_minmax   = em.abs_minmax(xsteps, ysteps)
             isx_max        = steps_minmax[1] == xsteps
@@ -84,6 +83,27 @@ class EasterControler(simulator.EasterSimulator):
             if abs(steps_minmax[0]) > 0: stepper_minmax[0].turn(steps=steps_minmax[0], thread=False)
             
             thread.join()
+            
+    def adjust_steppers(self, delta_steps):
+        xthread = None
+        if not self.pen_up: xthread = self.xstepper.adjust_lazy(delta_steps.real, self.config['max_stepper_speed'])
+        ythread = self.ystepper.adjust_lazy(delta_steps.imag, self.config['max_stepper_speed'])
+        
+        if xthread != None:
+            xthread.join()
+            if self.using_canvas:
+                self.canvas.update_info({
+                    'x-adj':  f'x adjust = {self.xstepper.adjust_count}',
+                    'x-last': f'x direc = {self.xstepper.last_direction}'
+                })
+            
+        if ythread != None:
+            ythread.join()
+            if self.using_canvas:
+                self.canvas.update_info({
+                    'y-adj':  f'y adjust = {self.ystepper.adjust_count}',
+                    'y-last': f'y direc =  {self.ystepper.last_direction}'
+                })
         
     def step_to(self, ppos: complex, **kwargs):
         move = kwargs.get('move', False)
@@ -96,74 +116,33 @@ class EasterControler(simulator.EasterSimulator):
         delta_steps = super().step_to(ppos, **new_kwargs)
         
         if delta_steps != None:
-            xthread = None
-            
             if move: self.penup()
-            else: xthread = self.xstepper.adjust_lazy(delta_steps.real, self.config['max_stepper_speed'])
             
-            ythread = self.ystepper.adjust_lazy(delta_steps.imag, self.config['max_stepper_speed'])
-            
-            if xthread != None:
-                xthread.join()
-                if self.using_canvas:
-                    self.canvas.update_info({
-                        'x-adj':  f'x adjust = {self.xstepper.adjust_count}',
-                        'x-last': f'x direc = {self.xstepper.last_direction}'
-                    })
-                
-            if ythread != None:
-                ythread.join()
-                if self.using_canvas:
-                    self.canvas.update_info({
-                        'y-adj':  f'y adjust = {self.ystepper.adjust_count}',
-                        'y-last': f'y direc =  {self.ystepper.last_direction}'
-                    })
-                                        
+            self.adjust_steppers()
             self.stepper_step_to(delta_steps.real, delta_steps.imag)
             
             if move and not stayup: self.pendown()
             if info: self.update_canvas_info(self.canvas_info_pos())
     
     def set_pen_up(self, up: bool):
-        #print(f'try pen up {up}')
         if super().set_pen_up(up):
-            print(f'set pen up {up}')
             newPos = self.config['penup_pos'] if up else self.config['pendown_pos']
-            self.log(f'penup pos: {newPos}')
-            
             time.sleep(self.config.get('penup_sleep', 0))
-            self.servo.set_pos(newPos, times=self.config['servo_times'], delay=self.config['servo_delay'])
+            times = 1 if up and False else self.config['servo_times']
+            self.servo.set_pos(newPos, times=times, delay=self.config['servo_delay'])
             time.sleep(self.config.get('penup_sleep', 0))
 
     def update_color(self, cp, np):
         super().update_color(cp, np)
         steps = (np - cp) * self.config['change_color_steps']
         self.zstepper.turn(steps=steps)
-
-    def change_color(self, color: str, **kwargs):
-        new_pos = super().change_color(color)
-        #print(new_pos)
         
-        if new_pos != None:
-            current_pos = self.config['color_pos'][self.current_color]
-            #new_pos     = self.config['color_pos'][color]
-            #print(current_pos)
-            if current_pos != new_pos:
-                self.penup()
-                
-                steps = (new_pos - current_pos) * self.config['change_color_steps']
-                self.log(f"steps: {steps}x")
-                self.zstepper.turn(steps=steps)
-                
-                if not stayup: self.pendown()
-                
-            self.current_color = color
-        
-    def set_status_state(self, state):
-        print('controler set status to ' + str(state))
+    def set_status_state(self, state: int):
+        super().set_status_state(state)
         self.leds.state = state
     
     def cleanup(self):
+        super().cleanup()
         self.log('cleanup', 10)
         
         self.ystepper.set_pins_low()

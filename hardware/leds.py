@@ -23,8 +23,8 @@ class EasterLEDs:
         on = True
         while not self.exit:
             led_state = {
-                 'blue': on if self.state == 2 else not on,
-                 'white': True if self.state == 0 else on
+                 'blue':  True if self.state == 3 else (on if self.state == 2 else not on),
+                 'white': True if self.state == 3 else (True if self.state == 0 else on)
             }            
 
             self.output_leds(led_state)

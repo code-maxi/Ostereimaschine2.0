@@ -18,7 +18,7 @@ class EasterCanvas:
         if self.eggwidth == None: 
             self.eggwidth = round(self.config['egg_length'] / (self.config['egg_height'] * math.pi) * self.height)
         
-        self.stroke_width = self.config['pen_stroke_width'] * 3
+        self.stroke_width = self.config['pen_stroke_width'] * 2
         
         self.pen_pos = 0j
         self.pen_color = 'notset'
@@ -233,44 +233,45 @@ class EasterCanvas:
     def quit(self): self.window.quit()
     
     def set_pen_up(self, up: bool):
-        if up != self.pen_up:
-            if not up:
-                display_penpos = self.pos_on_grid(self.pen_pos)
-                self.canvas.create_rectangle(
-                    display_penpos.real - self.stroke_width / 2, display_penpos.imag - self.stroke_width / 2,
-                    display_penpos.real + self.stroke_width / 2, display_penpos.imag + self.stroke_width / 2, 
-                    fill=self.pen_color, outline='#000', width=1
-                )
-            self.pen_up = up
-            self.paint_color()
-    
-    def go_to(self, deltapos: complex, move: bool, info: dict, paint_info: bool):
-        if abs(deltapos) > 0:
-            self.info.update(info)
-            
-            new_pos = self.pen_pos + deltapos
-            
+        self.pen_up = up
+        if not up:
             display_penpos = self.pos_on_grid(self.pen_pos)
-            display_newpos = self.pos_on_grid(new_pos)
+            #print(f'pen down to {display_penpos} of {self.pen_pos}')
+            self.canvas.create_rectangle(
+                display_penpos.real - self.stroke_width / 2, display_penpos.imag - self.stroke_width / 2,
+                display_penpos.real + self.stroke_width / 2, display_penpos.imag + self.stroke_width / 2, 
+                fill=self.pen_color, outline='#000', width=1
+            )
+        self.paint_color()
         
-            if move:
-                self.pen_pos = new_pos
+    
+    def cursor_to(self, deltapos: complex, ispenup: bool, info: dict, paint_info: bool):
+        self.info.update(info)
+        
+        new_pos = self.pen_pos + deltapos
+        new_pos = new_pos.real + em.modulo(new_pos.imag, 1) * 1j
+        
+        display_penpos = self.pos_on_grid(self.pen_pos)
+        display_newpos = self.pos_on_grid(new_pos)
+    
+        if self.pen_up: self.pen_pos = new_pos
+            
+        else:
+            self.canvas.create_line(
+                display_penpos.real, display_penpos.imag, 
+                display_newpos.real, display_newpos.imag,
+                fill=self.pen_color, width=self.stroke_width
+            )
+        
+            if new_pos.imag > 1 or new_pos.imag < 0:
+                self.pen_pos += 1j if new_pos.imag < 0 else -1j
+                self.cursor_to(deltapos, ispenup, info, paint_info)
                 
             else:
-                self.canvas.create_line(
-                    display_penpos.real, display_penpos.imag, 
-                    display_newpos.real, display_newpos.imag,
-                    fill=self.pen_color, width=self.stroke_width
-                )
-            
-                if new_pos.imag > 1 or new_pos.imag < 0:
-                    self.pen_pos += 1j if new_pos.imag < 0 else -1j
-                    self.go_to(deltapos, False, info, paint_info)
-                    
-                else:
-                    self.pen_pos = new_pos
-                    if paint_info: self.paint_info()
-                    self.canvas.update()
+                self.pen_pos = new_pos
+                if paint_info: self.paint_info()
+                
+            self.canvas.update()
          
          
          

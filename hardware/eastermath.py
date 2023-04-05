@@ -17,6 +17,8 @@ def abs_minmax(n1: float, n2: float):
         maxRes = n2
         minRes = n1
     return (minRes, maxRes)
+
+def complex_bigger(z1: complex, z2: complex): return z1.real > z2.real and z1.imag > z2.imag
     
 def get_save(array: list, i: int, *arr):
     none = arr[0] if len(arr) > 0 else None

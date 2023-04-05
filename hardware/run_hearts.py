@@ -13,14 +13,14 @@ def act(ct: EasterSimulator):
 
     line_types = [False, True, False] # wheather dashed
     line_dash_number = 60
-    mm_way = ct.x_stroke_steps
+    mm_way = ct.x_stroke_steps / 2
 
-    hearts_number = 10
+    hearts_number = 8
     hearts_xpos = 0
-    hearts_width = 0.3 * ct.egg_xborder_steps
+    hearts_width = 0.38 * ct.egg_xborder_steps
     heart_height_f = 0.9
     heart_t = 0.3
-    heart_fill = 100
+    heart_fill = 4
 
     triangle_number = 12
     triangle_fill = 2
@@ -29,7 +29,7 @@ def act(ct: EasterSimulator):
     triangle_poses = [0, -0.5j, 1, 0.5j, 0]
     triangle_dot_rad = ct.xy_stroke_steps() * 0.5
     triangle_dot_fill = 0
-    triangle_width = (ct.egg_xborder_steps - hearts_width)/2 - mm_way * len(line_types)
+    triangle_width = (ct.egg_xborder_steps - hearts_width)/2 - mm_way * (len(line_types)+2)
     triangles_xpos = ct.egg_xborder_steps/2 - triangle_width
 
     curl_number = 20
@@ -50,43 +50,46 @@ def act(ct: EasterSimulator):
                 ct, 
                 heart_size = hearts_width + heart_height,
                 heart_t = heart_t,
-                heart_subsize = ct.x_stroke_steps + ct.y_stroke_steps,
-                heart_halffill = heart_fill - 1,
+                heart_subsize = ct.xy_stroke_steps() * 1.5,
+                heart_halffill = heart_fill,
                 heart_turn = 0 if h % 2 == 1 else math.pi,
                 heart_fill = heart_fill
             )
 
     def triangles(xf: float, types: list):
-        for typ in types:
-            for i in range(triangle_number):
-                pos = triangles_xpos * xf + triangle_height * i
-                ct.change_color(aviable_colors[i % len(aviable_colors)], stayup=True)
+        #for typ in types:
+        for i in range(triangle_number):
+            pos = triangles_xpos * xf + triangle_height * i
+            ct.change_color(aviable_colors[i % len(aviable_colors)], stayup=True)
 
-                if typ == 'tri':
-                    ct.step_to(pos, move=True)
+            if 'tri' in types:
+                ct.step_to(pos, move=True)
 
-                    for fill in range(triangle_fill):
-                        for tpos in triangle_poses:
-                            delta = triangle_shrink ** fill * em.comlpex_scalar(tpos, triangle_width * xf + triangle_height)
-                            ct.step_to(pos + delta)
+                for fill in range(triangle_fill):
+                    for tpos in triangle_poses:
+                        delta = triangle_shrink ** fill * em.comlpex_scalar(tpos, triangle_width * xf + triangle_height)
+                        ct.step_to(pos + delta)
 
-                if typ == 'circ':
-                    ct.step_to(pos + triangle_width * 0.75 * xf + triangle_height / 2, move=True)
-                    
-                    shapes.circle(
-                        ct,
-                        circle_rad = triangle_dot_rad,
-                        circle_fill = triangle_dot_fill,
-                        circle_res = 8
-                    )
+            if 'circ' in types:
+                ct.step_to(pos + triangle_width * 0.75 * xf + triangle_height / 2, move=True)
+                
+                shapes.circle(
+                    ct,
+                    circle_rad = triangle_dot_rad,
+                    circle_fill = triangle_dot_fill,
+                    circle_res = 8
+                )
+                
+        '''ct.step_to(triangles_xpos * xf, move=True)
+        ct.step_to(0, rel=True, long=True)'''
 
     def lines(xf: float):
         for line in range(len(line_types)):
             dash = line_types[line]
-            xpos = (triangles_xpos - mm_way * line) *  xf
+            xpos = (triangles_xpos - mm_way * (line+1)) *  xf
             color = aviable_colors[line % len(aviable_colors)]
             
-            ct.step_to(xpos, move=True, color=color)
+            ct.step_to(xpos, move=True, color=color, stayup=True)
             
             move = False
             for f in range(line_dash_number + 2):
@@ -98,7 +101,7 @@ def act(ct: EasterSimulator):
                 if dash: move = not move
 
     def curl():
-        ct.step_to(curl_xpos, move=True, stayup=True)
+        ct.step_to(curl_xpos, move=True)
         shapes.curl(
             ct,
             curl_number = curl_number,
@@ -108,18 +111,21 @@ def act(ct: EasterSimulator):
             curl_colors = curl_colors
         )
 
-    triangles(1, ['tri', 'circ'])
-    lines(1)
+    #triangles(1, ['tri', 'circ'])
+    #lines(1)
     hearts()
     curl()
     lines(-1)
+    
+    #ct.go_to(20 + 50j)
+    #ct.go_to(30 + 60j, move=True)
 
-#from controller import EasterControler
+from controller import EasterControler
 sim = EasterSimulator(
     {
-        'egg_use_percent': 65,
-        'simulator_start_speed': 0.0,
-        'start_color': 'green',
+        'egg_use_percent': 62.5,
+        'simulator_start_speed': 0.1,
+        'start_color': 'orange',
         'color_pos': {
             'purple': 0,
             'blue': 1,
