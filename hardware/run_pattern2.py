@@ -117,8 +117,8 @@ def act(ct: EasterSimulator):
     #line_dots()
     #sin_dots()
 
-from controller import EasterControler
-sim = EasterControler(
+#from controller import EasterControler
+sim = EasterSimulator(
     {
         'egg_use_percent': 65,
         'simulator_start_speed': 0.0,
@@ -137,4 +137,4 @@ sim = EasterControler(
         #'simulator_window_height': 1000
     }
 )
-sim.run(act=act, gui=True, console=True, direct_run=False)
+sim.run(act=act, gui=True, console=True, direct_run=True)

@@ -134,11 +134,16 @@ class EasterControler(simulator.EasterSimulator):
             time.sleep(self.config.get('penup_sleep', 0))
             self.servo.set_pos(newPos, times=self.config['servo_times'], delay=self.config['servo_delay'])
             time.sleep(self.config.get('penup_sleep', 0))
-        
+
+    def update_color(self, cp, np):
+        super().update_color(cp, np)
+        steps = (np - cp) * self.config['change_color_steps']
+        self.zstepper.turn(steps=steps)
+
     def change_color(self, color: str, **kwargs):
         new_pos = super().change_color(color)
         #print(new_pos)
-        stayup = kwargs.get('stayup', False)
+        
         if new_pos != None:
             current_pos = self.config['color_pos'][self.current_color]
             #new_pos     = self.config['color_pos'][color]

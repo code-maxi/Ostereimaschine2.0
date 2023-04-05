@@ -1,40 +1,83 @@
 import math
+import eastermath as em
 from simulator import EasterSimulator
+
+def curl(ct: EasterSimulator, **config):
+    number = config.get('curl_number', 10)
+    size = config.get('curl_size', 10)
+    center = config.get('curl_center', 0)
+    old_pos = ct.xy_pos() + em.comlpex_scalar(center, size)
+
+    height_fac = config.get('curl_height_fac', 0.3)
+    res = config.get('curl_res', 32)
+    
+    colors = config.get('curl_colors', [ct.current_color])
+
+    for i in range(res * number):
+        ct.change_color(colors[int(i/res/len(colors)) % len(colors)])
+        alpha = i / res * math.pi * 2
+        move_circ = math.cos(alpha) * size.real/2 + math.sin(alpha) * (size.imag/number) * height_fac * 1j
+        move_way = i / res / number * size.imag * 1j
+        ct.step_to(old_pos + move_circ + move_way, move=i == 0)
 
 def heart(ct: EasterSimulator, **config):
     old_pos = ct.xy_pos()
-    w = config.get('heart_w')
-    h = config.get('heart_h')
-    t = config.get('heart_t', 2)
+    size = config.get('heart_size')
+    t = config.get('heart_t', 0.3)
+    parts = config.get('heart_parts', 4)
     turn = config.get('heart_turn', 0)
-    r = w / 4
+    fill = config.get('heart_fill', 0)
+    
+    r = size.imag / 4
     res = config.get('heart_res', 32)
     sin_points = []
     circ_points = []
 
     turn_vec = math.cos(turn) + math.sin(turn) * 1j
+    sin_width = (1-t) * size.real
+    circ_width = t * size.real
     
     for x in range(res + 1):
         f = x / res
-        sin_point =  f * h + math.sin(f * math.pi / 2) * w / 2 * 1j
+        sin_point =  f * sin_width + math.sin(f * math.pi / 2) * size.imag / 2 * 1j
         
         circ_alpha = (0.5 - f) * math.pi
-        circ_point = (math.cos(circ_alpha) * t + math.sin(circ_alpha) * 1j) * r
+        circ_point = math.cos(circ_alpha) * circ_width + math.sin(circ_alpha) * 1j * r
         #print(f'heart {x}/{res} – circ_alpha={circ_alpha} circ_point={circ_point}')
 
         sin_points.append(sin_point)
         circ_points.append(circ_point)
 
-    for s in sin_points: ct.step_to( s * turn_vec + old_pos)
+    if parts >= 1:
+        for s in sin_points: ct.step_to( s * turn_vec + old_pos)
     
-    m = h + w / 4 * 1j
-    for c in circ_points: ct.step_to((c + m) * turn_vec + old_pos)
-    m -= w / 2 * 1j
-    for c in circ_points: ct.step_to((c + m) * turn_vec + old_pos)
+    m = sin_width + size.imag / 4 * 1j
+    if parts >= 2:
+        for c in circ_points: ct.step_to((c + m) * turn_vec + old_pos)
+
+    m -= size.imag / 2 * 1j
+    if parts >= 3:
+        for c in circ_points: ct.step_to((c + m) * turn_vec + old_pos)
 
     sin_points.reverse()
-    for s in sin_points: ct.step_to((s.real - s.imag * 1j) * turn_vec + old_pos)
+    if parts >= 4: 
+        for s in sin_points: ct.step_to((s.real - s.imag * 1j) * turn_vec + old_pos)
 
+    ct.step_to(old_pos)
+
+    if fill > 0:
+        subsize = config.get('heart_subsize', ct.xy_stroke_steps() * turn_vec)
+        halffill = config.get('heart_halffill', -1)
+        new_size = size - subsize
+        if new_size.real > 0 and new_size.imag > 0:
+            ct.step_to(subsize.real / 2 * turn_vec, rel=True)
+            new_config = dict(config)
+            new_config.update({
+                'heart_size': new_size,
+                'heart_fill': fill - 1,
+                'heart_parts': 2 if fill <= halffill else 4
+            })
+            heart(ct, **new_config)
     
 
 def flower_curve(ct: EasterSimulator, **config):

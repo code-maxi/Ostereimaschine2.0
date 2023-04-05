@@ -131,18 +131,27 @@ class EasterCanvas:
             colorpos = self.config['color_pos'][color]
             if colorpos != None:
                 i = len(self.config['color_pos']) - 1 - colorpos
+                hex_color = em.color_to_hex(color)
+
                 xpos = offset
                 ypos = (offset + size) * i + offset
-                hex_color = em.color_to_hex(color)
-                width = (8 if self.pen_up else 0) if self.pen_color == hex_color else 16
+
+                size2 = size * ((0.75 if self.pen_up else 1) if self.pen_color == hex_color else 0.4)
+                xpos2 = xpos + (size - size2)/2
+                ypos2 = ypos + (size - size2)/2
                 #print(f'color {color} width {width} penup {self.pen_up}')
                 
                 self.canvas.create_rectangle(
                     xpos, ypos, 
                     xpos + size, ypos + size,
+                    fill='#fff',
+                    width=0
+                )
+                self.canvas.create_rectangle(
+                    xpos2, ypos2, 
+                    xpos2 + size2, ypos2 + size2,
                     fill=hex_color,
-                    outline='#fff',
-                    width=width
+                    width=0
                 )
                 
     def paint_text_box(self, **kwargs):

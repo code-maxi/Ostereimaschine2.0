@@ -128,7 +128,8 @@ class EasterSimulator:
         
     def log(self, obj, *args):
         prio = em.get_save(args, 0, 0) 
-        if prio >= self.print_piority: print(f'EasterSimulator: {obj}')
+        color = em.get_save(args, 1, em.Colors.LIGHT_CYAN) 
+        if prio >= self.print_piority: print(f'{color}EasterSimulator: {obj}{em.Colors.END}')
         
     def pos_to_string(self):
         dp = 1
@@ -244,11 +245,20 @@ class EasterSimulator:
     
     def xy_stroke_steps(self): return self.x_stroke_steps + self.y_stroke_steps
         
+    def update_color(self, cp, np):
+        self.log(f'Updating color from {cp} to {np} → {np - cp}')
+        if self.using_canvas(): self.canvas.set_color(self.current_color)
+    
     def change_color(self, color: str, **kwargs):
         new_pos = self.config['color_pos'].get(color, None)
+        stayup = kwargs.get('stayup', False)
         if new_pos != None:
-            self.log(f"Changing color to {color}...", 0)
-            if self.using_canvas(): self.canvas.set_color(color)
+            current_pos = self.config['color_pos'][self.current_color]
+            self.current_color = color
+            if current_pos != new_pos:
+                self.penup()
+                self.update_color(current_pos, new_pos)
+                if not stayup: self.pendown()
             
         return new_pos        
         
@@ -390,7 +400,7 @@ class EasterSimulator:
                 
         while not escape:
             if len(commands) == 0:
-                inp = input('?: ')
+                inp = input(f'{em.Colors.RED}?: {em.Colors.END}')
                 commands = inp.split('|')
             
             split = commands.pop(0).split(';')
