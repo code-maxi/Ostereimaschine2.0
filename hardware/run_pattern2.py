@@ -65,7 +65,7 @@ def act(ct: EasterSimulator):
 
     spirals_pos = ct.xy_pos()
     def spirals():
-        ct.update_canvas_info({ 'spiral_min_angle': f'spiral_min_angle={round(spiral_min_angle) * 180 / math.pi}' })
+        ct.update_info({ 'spiral_min_angle': f'spiral_min_angle={round(spiral_min_angle) * 180 / math.pi}' })
         for spiral_index in range(spiral_number):
             ypos = spiral_xpos + spiral_index / spiral_number * ct.egg_y_steps * 1j
             

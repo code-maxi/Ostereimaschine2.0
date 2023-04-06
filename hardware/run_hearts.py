@@ -1,4 +1,4 @@
-from simulator import EasterSimulator
+from eastercanvas import EasterCanvas
 import eastermath as em
 import shapes
 import time
@@ -6,7 +6,7 @@ import math
 import shapes
 import random
 
-def act(ct: EasterSimulator):
+def act(ct: EasterCanvas):
     print('pattern run')
 
     aviable_colors = [ 'red', 'orange', 'green', 'blue', 'purple']
@@ -15,9 +15,9 @@ def act(ct: EasterSimulator):
     line_dash_number = 60
     mm_way = ct.x_stroke_steps / 2
 
-    hearts_number = 8
+    hearts_number = 10
     hearts_xpos = 0
-    hearts_width = 0.38 * ct.egg_xborder_steps
+    hearts_width = 0.35 * ct.egg_xborder_steps
     heart_height_f = 0.9
     heart_t = 0.3
     heart_fill = 4
@@ -111,8 +111,8 @@ def act(ct: EasterSimulator):
             curl_colors = curl_colors
         )
 
-    #triangles(1, ['tri', 'circ'])
-    #lines(1)
+    triangles(1, ['tri', 'circ'])
+    lines(1)
     hearts()
     curl()
     lines(-1)
@@ -120,11 +120,11 @@ def act(ct: EasterSimulator):
     #ct.go_to(20 + 50j)
     #ct.go_to(30 + 60j, move=True)
 
-from controller import EasterControler
-sim = EasterSimulator(
+#from controller import EasterControler
+sim = EasterCanvas(
     {
         'egg_use_percent': 62.5,
-        'simulator_start_speed': 0.1,
+        'simulator_start_speed': 0.01,
         'start_color': 'orange',
         'color_pos': {
             'purple': 0,
@@ -138,4 +138,4 @@ sim = EasterSimulator(
         #'simulator_window_height': 1000
     }
 )
-sim.run(act=act, gui=True, console=True, direct_run=True)
+sim.run(act=act, gui=True, console=True, direct_run=False)

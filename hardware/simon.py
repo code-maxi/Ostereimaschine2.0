@@ -76,7 +76,7 @@ def act(ct: EasterSimulator):
             #ct.go_to(x, 0)
             
             #ct.sin_wave(seg_number=sin_seg, width=-sin_width, res=4)
-            #ct.update_canvas_info({})
+            #ct.update_info({})
             #ct.go_to(x, 0)
             
             #ct.step_to((-sin_width * 1.5, 0),   rel=True, move=True)
@@ -90,7 +90,7 @@ def act(ct: EasterSimulator):
         for s in range(iterations):
             print(f'star {s} pos {ct.pos_to_string()}')
             ct.change_color(colors[s % len(colors)])
-            ct.update_canvas_info({'star': f'star  = {s}'})
+            ct.update_info({'star': f'star  = {s}'})
             star(star_width, star_height, star_fill, star_fac, star_wsub, star_hsub, 0)
 
     def eggs():
@@ -98,7 +98,7 @@ def act(ct: EasterSimulator):
             ct.step_to(left_line * d, move=True)
             for s in range(iterations):
                 ct.change_color(colors[s % len(colors)])
-                ct.update_canvas_info({'star': f'egg   = {s} | {d}'})
+                ct.update_info({'star': f'egg   = {s} | {d}'})
                 egg(egg_size, egg_fill)
     ct.pendown()    
     

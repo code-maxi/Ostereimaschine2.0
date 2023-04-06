@@ -11,10 +11,6 @@ class EasterControler(simulator.EasterSimulator):
     def __init__(self, config: dict):
         super().__init__(config)
         
-        self.pen_servo_offset = 0
-        
-        self.setup()
-        
     def setup(self):
         self.log('Easter Controller setup...', 10)
          
@@ -32,6 +28,11 @@ class EasterControler(simulator.EasterSimulator):
         self.zstepper.setup_pins()
         self.servo.setup_pins()
         self.leds.setup_pins()
+
+    def initialize(self):
+        super().initialize()
+        self.pen_servo_offset = 0
+        self.setup()
         
     def stepper(self, name: str):
         stepper = None
@@ -59,7 +60,9 @@ class EasterControler(simulator.EasterSimulator):
         self.xstepper.step(direction=xdirection, count=False)
         self.ystepper.step(direction=ydirection, count=False)
         
-    def stepper_step_to(self, xsteps: int, ysteps: int):   
+    def execute_steps_to(self, deltapos: complex):
+        xsteps = deltapos.real
+        ysteps = deltapos.imag
         if xsteps != 0 or ysteps != 0:
             steps_minmax   = em.abs_minmax(xsteps, ysteps)
             isx_max        = steps_minmax[1] == xsteps
@@ -119,10 +122,10 @@ class EasterControler(simulator.EasterSimulator):
             if move: self.penup()
             
             self.adjust_steppers()
-            self.stepper_step_to(delta_steps.real, delta_steps.imag)
+            self.execute_steps_to(delta_steps.real, delta_steps.imag)
             
             if move and not stayup: self.pendown()
-            if info: self.update_canvas_info(self.canvas_info_pos())
+            if info: self.update_info(self.canvas_info_pos())
     
     def set_pen_up(self, up: bool):
         if super().set_pen_up(up):
@@ -137,7 +140,7 @@ class EasterControler(simulator.EasterSimulator):
         steps = (np - cp) * self.config['change_color_steps']
         self.zstepper.turn(steps=steps)
         
-    def set_status_state(self, state: int):
+    def set_status_state(self, state: int, **_):
         super().set_status_state(state)
         self.leds.state = state
     
@@ -152,6 +155,11 @@ class EasterControler(simulator.EasterSimulator):
         self.leds.cleanup()
         
         GPIO.cleanup()
+
+    def escape(self):
+        self.pendown()
+        self.cleanup()
+        super().escape()
         
     def on_console_input(self, typ: str, split: list):
         print(f'coltroler typ {typ}')

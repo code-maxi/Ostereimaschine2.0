@@ -77,5 +77,6 @@ defaultEasterControlerConfig = {
     'name': 'Unknown',
 #    'simulator_window_height': 600,
     'simulator_on': True,
-    'simulator_start_speed': 0.1 # sleep per 1000 steps
+    'simulator_start_speed': 0.1 # sleep per 1000 steps,
+   
 }

@@ -6,43 +6,30 @@ import tkinter.font
 import threading
 import time
 import math
+import simulator
 
-class EasterCanvas:
-    def __init__(self, config: dict, onclose):
-        self.config = config
-        
-        self.height  = self.config['simulator_window_height']
-        self.width   = self.config['simulator_window_width']
-        self.eggwidth   = self.config.get('simulator_egg_width', None)
+class EasterCanvas(simulator.EasterSimulator):
+    def __init__(self, config: dict):
+        super().__init__(config)
 
-        if self.eggwidth == None: 
-            self.eggwidth = round(self.config['egg_length'] / (self.config['egg_height'] * math.pi) * self.height)
+    def initialize(self):
+        super().initialize()
+
+        self.window_height  = self.config['simulator_window_height']
+        self.window_width   = self.config['simulator_window_width']
+        self.window_eggwidth   = self.config.get('simulator_egg_width', None)
+
+        if self.window_eggwidth == None: 
+            self.window_eggwidth = round(self.config['egg_length'] / (self.config['egg_height'] * math.pi) * self.window_height)
         
-        self.stroke_width = self.config['pen_stroke_width'] * 2
+        self.stroke_width = self.config['pen_stroke_width'] * 3
         
-        self.pen_pos = 0j
-        self.pen_color = 'notset'
-        self.pen_up = False
         self.grid_fill = '#333'
         self.background = '#ddd'
-        self.onclose = onclose
         self.info = {}
         self.fullscreen = not self.config.get('start_fullscreen', True)
         self.infotext = None
-        
-        self.initialize()
-        
-    def close_me(self):
-        self.onclose()
-        self.window.destroy()
-        exit(0)
-        
-    def toggle_fullscreen(self):
-        self.fullscreen = not self.fullscreen
-        print('fullscreen toggled')
-        self.window.attributes("-fullscreen", self.fullscreen)
-        
-    def initialize(self):
+
         self.window = tkinter.Tk()
         self.window.title(f'Easter Simulator – {self.config.get("name", "NONAME")}')
         self.window.config(bg='#345')
@@ -51,29 +38,118 @@ class EasterCanvas:
         
         self.canvas = tkinter.Canvas(
             self.window,
-            height=self.height,
-            width=self.width,
+            height=self.window_height,
+            width=self.window_width,
             bg="#fff"
         )
-        self.window.protocol("WM_DELETE_WINDOW", self.close_me)
-        self.window.bind('<Control-e>', lambda event: self.close_me())
-        self.window.bind('<Control-f>', lambda event: self.toggle_fullscreen())
+        self.window.protocol("WM_DELETE_WINDOW", self.escape)
+        self.window.bind('<Control-e>', lambda _: self.escape())
+        self.window.bind('<Control-f>', lambda _: self.toggle_fullscreen())
 
-        self.set_color(self.config['start_color'])
-        self.paint_all()
-        
+        self.paint_all()        
         self.canvas.pack()
+
+        self.log('Canvas __init__.', 10)
         
-    def main_loop(self): self.window.mainloop()
+    def escape(self):
+        self.log('Canvas EXIT', 10)
+        self.window.destroy()
+        super().escape()
+
+    def hide_color(self, color: str):
+        super().hide_color(color)
+        self.paint_color()
+
+    def update_color(self, cp, np):
+        super().update_color(cp, np)
+        '''
+        self.info.update({
+            'color': f'color = {color if color != None else "–"}',
+            'pen':   f'pen   = {"down" if color != None else "up"}'
+        })
+        self.paint_info()
+        '''
+        self.paint_color()
+
+    def set_status_state(self, state: int, **kwargs):
+        super().set_status_state(state)
+        infotext = 'PAUSED'
+        pause = kwargs.get('pause', False)
+
+        if state == 0:
+            infotext = 'ADJUSTING'
+            self.info_text(self.adjust_text)
+
+        elif state == 1: 
+            infotext = 'RUNNING'
+            if not pause: self.paint_all()
+
+        elif state == 2:
+            infotext = 'FINISHED'
+            if not self.direct_run: self.info_text(self.finish_text)
+
+        self.update_info({
+            'state': f'State = {infotext}'
+        })
+
+    def set_pen_up(self, up: bool):
+        changed = super().set_pen_up(up)
+        if changed:
+            if not up:
+                display_penpos = self.pos_on_grid(self.xy_pos())
+                self.canvas.create_rectangle(
+                    display_penpos.real - self.stroke_width / 2, display_penpos.imag - self.stroke_width / 2,
+                    display_penpos.real + self.stroke_width / 2, display_penpos.imag + self.stroke_width / 2, 
+                    fill=self.current_color, outline='#000', width=1
+                )
+            self.paint_color()
+        return changed
+    
+    def toggle_fullscreen(self):
+        self.fullscreen = not self.fullscreen
+        print('fullscreen toggled')
+        self.window.attributes("-fullscreen", self.fullscreen)
+        
+    def main_loop(self): 
+        self.window.mainloop()
 
     def pos_on_grid(self, pos: complex):
-        xpos = pos.real * (self.config['egg_use_percent']/100) * self.eggwidth + self.width / 2
-        ypos = pos.imag * self.height # (1 - pos.imag) * self.height
+        xpos = pos.real / self.egg_xborder_steps * (self.config['egg_use_percent']/100) * self.window_eggwidth + self.window_width / 2
+        ypos = pos.imag / self.egg_y_steps * self.window_height # (1 - pos.imag) * self.height
         return xpos + ypos * 1j
+
+    def execute_steps_to(self, deltasteps: complex):
+        super().execute_steps_to(deltasteps)
+        if not self.ispenup:
+            pen_pos = self.xy_pos()
+            new_pos = pen_pos + deltasteps
+            self.line_to(pen_pos, new_pos)
+
+    def line_to(self, pos1: complex, pos2: complex):
+        display1 = self.pos_on_grid(pos1)
+        display2 = self.pos_on_grid(pos2)
+        #+print(f'canvas line from {pos1} | {display1} to {pos2} | {display2}')
+        self.canvas.create_line(
+            display1.real, display1.imag, 
+            display2.real, display2.imag,
+            fill=self.current_color, width=self.stroke_width
+        )
+    
+        if pos2.imag > self.egg_y_steps or pos2.imag < 0:
+            yadd = (1j if pos2.imag < 0 else -1j) * self.egg_y_steps
+            self.line_to(pos1 + yadd, pos2 + yadd)
         
     def clear(self):
-        self.canvas.create_rectangle(0, 0, self.width, self.height, fill=self.background)
-        self.canvas.create_rectangle((self.width - self.eggwidth)/2, 0, (self.width + self.eggwidth)/2, self.height, fill='#fff', width=0)
+        self.canvas.create_rectangle(
+            0, 0, 
+            self.window_width, self.window_height, 
+            fill=self.background
+        )
+        self.canvas.create_rectangle(
+            (self.window_width - self.window_eggwidth)/2, 0, 
+            (self.window_width + self.window_eggwidth)/2, self.window_height, 
+            fill='#fff', width=0
+        )
     
     def paint_all(self):
         self.clear_grid()
@@ -84,19 +160,24 @@ class EasterCanvas:
         self.clear()
         
         for xrow in range(-5, 6):
-            pos = xrow / 10
+            pos = xrow / 10 * self.egg_xborder_steps
             xpos = self.pos_on_grid(pos)
-            #print(f'pos {pos} real {xpos.real} img {xpos.imag} xpos {xpos}')
-
-            self.canvas.create_line(xpos.real, 0, xpos.real, self.height, width=2 if xrow == 0 else 1, fill='#000')
-            self.canvas.create_text(xpos.real, 0, text=f'  {xrow*10}% ', fill=self.grid_fill, anchor='nw')
+            self.canvas.create_line(
+                xpos.real, 0, 
+                xpos.real, self.window_height, 
+                width=2 if xrow == 0 else 1, fill='#000'
+            )
+            self.canvas.create_text(
+                xpos.real, 0, 
+                text=f'  {xrow*10}% ', 
+                fill=self.grid_fill, anchor='nw'
+            )
             
-        left_edge = self.pos_on_grid(-0.5).real
-        right_edge = self.pos_on_grid(0.5).real
+        left_edge = self.pos_on_grid(-0.5 * self.egg_xborder_steps).real
+        right_edge = self.pos_on_grid(0.5 * self.egg_xborder_steps).real
         
         for yrow in range(0, 11):
-            ypos = self.pos_on_grid(yrow/10 * 1j)
-
+            ypos = self.pos_on_grid(yrow/10 * 1j * self.egg_y_steps)
             anchor = 'se' if yrow == 0 else ('ne' if yrow == 10 else 'e')
             self.canvas.create_line(
                 left_edge, ypos.imag,
@@ -109,17 +190,27 @@ class EasterCanvas:
                 fill=self.grid_fill, 
                 anchor=anchor
             )
+
+    def update_info(self, info: dict):
+        self.info.update(info)
+        self.paint_info()
             
-            
+    def canvas_info_pos(self):
+        string_pos = self.pos_to_string().split('_')
+        return {
+            'p1': string_pos[0],
+            'p2': string_pos[1],
+            'p3': string_pos[2]
+        }
+
     def info_text(self, text):
-        self.infotext = text
-        
-        padding = 5
+        self.infotext = str(text)
         font_size = 13
-        text = str(self.infotext)
         self.paint_text_box(
-            text=text, padding=padding,
-            fontsize=font_size, x=self.width/2, y=self.height/2,
+            text=self.infotext,
+            fontsize=font_size, 
+            x=self.window_width/2, 
+            y=self.window_height/2,
             fill='#fff'
         )
             
@@ -136,10 +227,9 @@ class EasterCanvas:
                 xpos = offset
                 ypos = (offset + size) * i + offset
 
-                size2 = size * ((0.75 if self.pen_up else 1) if self.pen_color == hex_color else 0.4)
+                size2 = size * ((0.75 if self.ispenup else 1) if self.current_color == color else 0.4)
                 xpos2 = xpos + (size - size2)/2
                 ypos2 = ypos + (size - size2)/2
-                #print(f'color {color} width {width} penup {self.pen_up}')
                 
                 self.canvas.create_rectangle(
                     xpos, ypos, 
@@ -155,25 +245,24 @@ class EasterCanvas:
                 )
                 
     def paint_text_box(self, **kwargs):
-        padding = kwargs.get('padding', 10)
+        padding = kwargs.get('padding', 20 + 20j)
 
         fontsize = kwargs.get('size', 12)
-        lines = kwargs.get('text', 'Lorem\n ipsum.').split('\n')
+        lines = kwargs.get('text', 'Lorem\nipsum.').split('\n')
 
         spacing = kwargs.get('spacing', 8)
         font = tkinter.font.Font(size=fontsize, family="monospace")
         outline = kwargs.get('outline', '#000')
         
-        boxw = max([font.measure(s) for s in lines])
-        boxh = 2*padding - spacing + (fontsize + spacing) * len(lines)
+        boxw = 2*padding.real + max([font.measure(s) for s in lines])
+        boxh = 2*padding.imag + (fontsize + spacing) * len(lines)
         
         boxx = kwargs.get('x', 5) - kwargs.get('w', 0.5) * boxw
         boxy = kwargs.get('y', 5) - kwargs.get('h', 0.5) * boxh
         
         self.canvas.create_rectangle(
             boxx, boxy,
-            boxx + boxw,
-            boxy + boxh,
+            boxx + boxw, boxy + boxh,
             fill=kwargs.get('fill', self.background),
             outline= outline,
             width=1
@@ -181,7 +270,7 @@ class EasterCanvas:
         
         for line in lines:
             self.canvas.create_text(
-                boxx, boxy,
+                boxx + padding.real, boxy + padding.imag,
                 text=line,
                 fill=kwargs.get('textcolor', '#000'),
                 font=font,
@@ -192,102 +281,21 @@ class EasterCanvas:
         return (boxw, boxh)
             
     def paint_info(self):
-        spacing = 10
         font_size = 10
         lines = self.info.values()
         
         try:
             self.canvas.create_rectangle(
-                self.width - self.info_size[0],
-                self.height - self.info_size[1],
-                self.width, self.height,
+                self.window_width - self.info_size[0],
+                self.window_height - self.info_size[1],
+                self.window_width, self.window_height,
                 fill=self.background, width=0
             )
         except AttributeError: pass
-        
-        #print(f'text_widths {text_widths} | max_width {max_width} | max_height {max_height}')
-        
+                
         self.info_size = self.paint_text_box(
             text = '\n'.join(lines), 
-            x=self.width, y=self.height,
+            x=self.window_width, y=self.window_height,
             w=1, h=1, fontsize=font_size,
             outline=self.background
         )
-            
-    def set_color(self, color):
-        #print(f'canvas change color to {color}')
-        newcolor = em.color_to_hex(color)
-        if self.pen_color != newcolor:
-            self.pen_color = newcolor
-            self.info.update({
-                'color': f'color = {color if color != None else "–"}',
-                'pen':   f'pen   = {"down" if color != None else "up"}'
-            })
-            self.paint_color()
-            self.paint_info()
-        
-    def update_info(self, info: dict):
-        self.info.update(info)
-        self.paint_info()
-        
-    def quit(self): self.window.quit()
-    
-    def set_pen_up(self, up: bool):
-        self.pen_up = up
-        if not up:
-            display_penpos = self.pos_on_grid(self.pen_pos)
-            #print(f'pen down to {display_penpos} of {self.pen_pos}')
-            self.canvas.create_rectangle(
-                display_penpos.real - self.stroke_width / 2, display_penpos.imag - self.stroke_width / 2,
-                display_penpos.real + self.stroke_width / 2, display_penpos.imag + self.stroke_width / 2, 
-                fill=self.pen_color, outline='#000', width=1
-            )
-        self.paint_color()
-        
-    
-    def cursor_to(self, deltapos: complex, ispenup: bool, info: dict, paint_info: bool):
-        self.info.update(info)
-        
-        new_pos = self.pen_pos + deltapos
-        new_pos = new_pos.real + em.modulo(new_pos.imag, 1) * 1j
-        
-        display_penpos = self.pos_on_grid(self.pen_pos)
-        display_newpos = self.pos_on_grid(new_pos)
-    
-        if self.pen_up: self.pen_pos = new_pos
-            
-        else:
-            self.canvas.create_line(
-                display_penpos.real, display_penpos.imag, 
-                display_newpos.real, display_newpos.imag,
-                fill=self.pen_color, width=self.stroke_width
-            )
-        
-            if new_pos.imag > 1 or new_pos.imag < 0:
-                self.pen_pos += 1j if new_pos.imag < 0 else -1j
-                self.cursor_to(deltapos, ispenup, info, paint_info)
-                
-            else:
-                self.pen_pos = new_pos
-                if paint_info: self.paint_info()
-                
-            self.canvas.update()
-         
-         
-         
-'''
-pos1 = ((xpen + 0.5) * self.width, self.y_on_grid(ypen))
-pos2 = ((px + 0.5) * self.width, self.y_on_grid(py))
-delta = em.vec_sub(pos2, pos1)
-length = em.vec_len(delta)
-pos3 = em.vec_add(em.vec_mul(delta, (length - self.stroke_width) / length), pos1)
-
-self.canvas.create_line(
-    pos1[0], pos1[1], pos2[0], pos2[1], 
-    fill='#f00', width=self.stroke_width
-)
-self.canvas.create_line(
-    pos1[0], pos1[1], pos3[0], pos3[1],
-    fill=self.pen_color, width=self.stroke_width
-)
-'''

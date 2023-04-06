@@ -6,14 +6,15 @@ import time
 import eastermath as em
 import sys
 import default 
-import eastercanvas
 import threading
 
 class EasterSimulator:
     def __init__(self, config: dict):
         self.config = dict(default.defaultEasterControlerConfig)
         self.config.update(config)
-        
+        self.initialize()
+    
+    def initialize(self):
         self.x_velocity = self.config['xstepper']['steps_per_millimeter']
         self.y_velocity = self.config['ystepper']['steps_of_turn'] / (math.pi * self.config['egg_height'])
 
@@ -26,148 +27,122 @@ class EasterSimulator:
         self.egg_xborder_length = self.config['egg_use_percent'] / 100 * self.config['egg_length']
         self.egg_xborder_steps = round(self.egg_xborder_length * self.x_velocity)
         
-        self.simulator_pos = (0 + 0j)
+        self.simulator_pos = 0
         self.simulator_speed = self.config['simulator_start_speed']
                 
         self.current_color = self.config['start_color']
+        self.ispenup = False
+
         self.print_piority = 2
         
         self.pause_event = threading.Event()
-        self.ispenup = False
-                
-        self.log('Simulator __init__ with config: ', 10)
-        
-    def init_canvas(self):
-        self.canvas = eastercanvas.EasterCanvas(
-            self.config,
-            self.canvas_close
-        )
-    
-    def canvas_close(self):
-        self.pendown()
-        self.cleanup()
-        print('canvas close!')
-        
-    def using_canvas(self):
-        try:
-            self.canvas
-            return True
-        except AttributeError:
-            return False
-            
-    def adjust_loop(self):        
-        run_pressed = keyboard.is_pressed(self.runkey)
-        if not self.script_thread_started.is_set() and (run_pressed or self.direct_run):
-            self.script_thread.start()
-            self.script_thread_started.set()
-        
-        penup = not keyboard.is_pressed(self.upkey)
-        self.set_pen_up(penup)
-        
-        pause = keyboard.is_pressed(self.pausekey)
-        if pause and not self.pause_pressed: self.set_pause(not self.pause_event.is_set())
-        self.pause_pressed = pause
-        
-        time.sleep(self.config['max_stepper_speed'])
-        
-    def set_status_state(self, state: int):
-        if state < 3: self.status_state = state
-        infotext = 'ADJUSTING' if state == 0 else ('RUNNING' if state == 1 else ('FINISHED' if state == 2 else 'PAUSED'))
-        self.update_canvas_info({
-            'state': f'State = {infotext}'
-        })
-    
-    def set_pause(self, pause: bool):
-        if self.pause_event.is_set() != pause:
-            if pause: self.pause_event.set()
-            else:     self.pause_event.clear()
-            self.set_status_state(3 if pause else self.status_state)
-        
-    def run_egg(self):
+        self.start_act_event = threading.Event()
+        self.exit_event = threading.Event()
+
+        self.status_states = []
+
         self.xkeys = ('d', 'a')
         self.ykeys = ('r', 'f')
         self.zkeys = ('s', 'w')
         self.upkey = 'u'
         self.runkey = 'enter'
         self.pausekey = 'p'
-    
-        adjust_text = f'''
-    ________________________________
-    | Drucke "{self.config["name"]}"... |
-      ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-    Bitte richte den Roboterarm richtig aus, indem du folgende Tasten drückst.  
-    <{self.xkeys[0].upper()}> Arm nach rechts     <{self.xkeys[1].upper()}> Arm nach links, 
-    <{self.zkeys[0].upper()}> Stifte ausfahren,   <{self.zkeys[1].upper()}> Stifte einfahren,   
-    <{self.ykeys[0].upper()}> Ei vorwärts drehen, <{self.ykeys[1].upper()}> Ei rückwers drehen, 
-    <{self.upkey.upper()}> Stift heruterlassen,
-    <{self.pausekey.upper()}> Druck pausieren, 
-    <{self.runkey.upper()}> Mit dem Drucken beginnen.    
-        '''
 
-        self.canvas.info_text(adjust_text)
-        self.canvas.window.update()
+        self.adjust_text = f'''________________________________
+| Drucke "{self.config["name"]}"... |
+‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+Bitte richte den Roboterarm richtig aus, indem du folgende Tasten drückst.
+<{self.xkeys[0].upper()}> Arm nach rechts     <{self.xkeys[1].upper()}> Arm nach links,
+<{self.zkeys[0].upper()}> Stifte ausfahren,   <{self.zkeys[1].upper()}> Stifte einfahren,
+<{self.ykeys[0].upper()}> Ei vorwärts drehen, <{self.ykeys[1].upper()}> Ei rückwers drehen,
+<{self.upkey.upper()}> Stift heruterlassen,
+<{self.pausekey.upper()}> Druck pausieren, 
+<{self.runkey.upper()}> Mit dem Drucken beginnen.'''
+        self.finish_text = f'''| FERTIG! |
+‾‾‾‾‾‾‾‾‾‾
+Das Ei "{self.config["name"]}" wurde fertiggestellt.\n    
+Du kannst es nun vorsichtig aus der Halterung nehmen.
+Zum Beenden bitte <Ctrl+E> drücken.'''
+                
+        self.log('Simulator __init__ with config: ', 10)
+
+    def escape(self): pass
+
+    def set_status_state(self, state: int, **_):
+        if state < 3: self.right_status = state
+    
+    def set_pause(self, pause: bool):
+        if self.pause_event.is_set() != pause:
+            if pause: self.pause_event.set()
+            else:     self.pause_event.clear()
+            self.set_status_state(
+                3 if pause else self.right_status,
+                pause=True
+            )
+            
+    def adjust_loop(self):        
+        run_pressed = keyboard.is_pressed(self.runkey)
+        if not self.start_act_event.is_set() and run_pressed:
+            self.start_act_event.set()
         
-        self.set_status_state(0)
-        self.escape = False
+        if not self.start_act_event.is_set():
+            penup = not keyboard.is_pressed(self.upkey)
+            self.set_pen_up(penup)
+        
+        pause = keyboard.is_pressed(self.pausekey)
+        if self.right_status == 1 and pause and not self.pause_pressed:
+            self.set_pause(not self.pause_event.is_set())
+        self.pause_pressed = pause
+
+    def run_adjust_thread(self):
         self.pause_pressed = False
-        self.script_thread = threading.Thread(target=self.run_act_script)
-        self.script_thread_started = threading.Event()
-        
-        print('adjust loop start')
-        
-        while not self.escape:
+        while not self.exit_event.is_set():
             self.adjust_loop()
+            time.sleep(self.config['max_stepper_speed'])
         
-    def run_act_script(self):
-        self.canvas.paint_all()
+    def run_act_thread(self):
+        self.set_status_state(0)
+
+        if self.direct_run:
+            self.start_act_event.set()
+
+        while not self.start_act_event.is_set():
+            time.sleep(self.config['max_stepper_speed'])
         
         self.set_status_state(1)
-        
         self.act(self)
         self.go_home()
-        
         self.set_status_state(2)
-        
-        finish_text = f'''
-    | FERTIG! |
-     ‾‾‾‾‾‾‾‾‾‾
-    Das Ei "{self.config["name"]}" wurde fertiggestellt.\n    
-    Du kannst es nun vorsichtig aus der Halterung nehmen.
-    Zum Beenden bitte <Ctrl+E> drücken.
-        '''
-        
-        if self.using_canvas() and not self.direct_run:
-            self.canvas.info_text(finish_text)
-            
-        print('!finished!')
-        
+
+    def main_loop(self):
+        try: 
+            self.console_debug_thread.join()
+            self.act_thread.join()
+        except AttributeError: pass
+
     def run(self, **kwargs):
         self.act = kwargs.get('act', None)
         self.direct_run = kwargs.get('direct_run', False)
-        gui = kwargs.get('gui', True)
         console = kwargs.get('console', True)
         
-        if gui:
-            self.init_canvas()
-            print('start_act')
-            if self.act != None:
-                self.act_thread = threading.Thread(target=self.run_egg)
-                self.act_thread.start()
-        
-        if console: self.console_debug()
-        
-        if self.using_canvas(): self.canvas.main_loop()
-        else: self.console_debug_thread.join()
-        
-    def console_debug(self, **kwargs):
-        self.console_debug_thread = threading.Thread(target=self.console_debug_thread)
-        self.console_debug_thread.start()
-        if kwargs.get('wait', False) == True: self.console_debug_thread.join()
+        if console:
+            self.console_debug_thread = threading.Thread(target=self.console_debug_thread)
+            self.console_debug_thread.start()
+
+        if self.act != None:
+            self.adjust_thread = threading.Thread(target=self.run_adjust_thread)
+            self.adjust_thread.start()
+
+            self.act_thread = threading.Thread(target=self.run_act_thread)
+            self.act_thread.start()
+
+        self.main_loop()
         
     def log(self, obj, *args):
         prio = em.get_save(args, 0, 0) 
         color = em.get_save(args, 1, em.Colors.LIGHT_CYAN) 
-        if prio >= self.print_piority: print(f'{color}EasterSimulator: {obj}{em.Colors.END}')
+        if prio >= self.print_piority:
+            print(f'{color}EasterSimulator: {obj}{em.Colors.END}')
         
     def pos_to_string(self):
         dp = 1
@@ -214,8 +189,8 @@ class EasterSimulator:
     
         return xsteps + ysteps * 1j
     
-    def adjust_steppers(self, delta_steps): pass
-    def stepper_step_to(self, xsteps: int, ysteps: int): pass
+    def adjust_steppers(self, _): pass
+    def execute_steps_to(self, _: complex): pass
         
     def step_to(self, ppos: complex, **kwargs):
         while self.pause_event.is_set(): time.sleep(0.001)
@@ -223,36 +198,29 @@ class EasterSimulator:
         move = kwargs.get('move', False)
         color = kwargs.get('color', None)
         stayup = kwargs.get('stayup', False)
-        info = kwargs.get('info', False)
-        
-        new_pos = ppos + self.xy_pos() if kwargs.get('rel', False) else ppos
-        delta_steps = self.delta_steps(new_pos, long=kwargs.get('long', False))
+        #info = kwargs.get('info', False)
+        rel = kwargs.get('rel', False)
+        long = kwargs.get('long', False)
+
+        new_pos = ppos + (self.xy_pos() if rel else 0)
+        delta_steps = self.delta_steps(new_pos, long=long)
                 
         if abs(delta_steps) > 0:
-            if move: self.penup()
-            
+            self.set_pen_up(move)
+
             self.adjust_steppers(delta_steps)
-            
-            self.simulator_pos = new_pos
-            
-            if self.using_canvas():
-                if info: self.update_canvas_info(self.canvas_info_pos())
-                
-                canvas_delta = (delta_steps.real / self.egg_xborder_steps + delta_steps.imag / self.egg_y_steps * 1j)
-                self.canvas.cursor_to(canvas_delta, self.ispenup, self.canvas_info_pos(), info)
-                
-                speed = self.get_simulator_speed()
-                if not move and speed > 0:
-                    length = abs(delta_steps)
-                    sleep = length / 1000 * speed
-                    time.sleep(sleep)
-                
             if color != None: self.change_color(color, stayup = move)
             
-            self.stepper_step_to(delta_steps.real, delta_steps.imag)
+            speed = self.get_simulator_speed()
+            if not move and speed > 0:
+                length = abs(delta_steps)
+                sleep = length / 1000 * speed
+                time.sleep(sleep)
+
+            self.execute_steps_to(delta_steps)
+            self.simulator_pos = new_pos
             
-            if move and not stayup:
-                self.pendown()
+            if move and not stayup: self.pendown()
                     
             return delta_steps        
         
@@ -268,27 +236,19 @@ class EasterSimulator:
     def go_home(self):
         self.go_to(0, move=True, color=self.config['start_color'], stayup=True)
         
-    def step_to_multiple(poses, **kwargs):
+    def step_to_multiple(self, poses, **kwargs):
         for pos in poses: self.step_to(pos, **kwargs)
         
     def set_pen_up(self, up: bool):
-        if up != self.ispenup:            
-            self.ispenup = up
-            if self.using_canvas(): self.canvas.set_pen_up(up)
-            
-            time.sleep(self.get_simulator_speed() * 4)
-            return True
-            
-        else: return False
+        self.ispenup = up
+        return up != self.ispenup
         
     def penup(self):   self.set_pen_up(True)
     def pendown(self): self.set_pen_up(False)
     
     def xy_stroke_steps(self): return self.x_stroke_steps + self.y_stroke_steps
         
-    def update_color(self, cp, np):
-        self.log(f'Updating color from {cp} to {np} → {np - cp}')
-        if self.using_canvas(): self.canvas.set_color(self.current_color)
+    def update_color(self, cp, np): pass
     
     def change_color(self, color: str, **kwargs):
         new_pos = self.config['color_pos'].get(color, None)
@@ -300,19 +260,11 @@ class EasterSimulator:
                 self.penup()
                 self.update_color(current_pos, new_pos)
                 if not stayup: self.pendown()
-            
-        return new_pos        
-        
-    def update_canvas_info(self, info: dict):
-        if self.using_canvas(): self.canvas.update_info(info)
-        
-    def canvas_info_pos(self):
-        string_pos = self.pos_to_string().split('_')
-        return {
-            'p1': string_pos[0],
-            'p2': string_pos[1],
-            'p3': string_pos[2]
-        }
+
+        return new_pos
+    
+    def hide_color(self, color: str):
+        self.current_color = color
         
     def on_console_input(self, typ: str, split: list):
         print(f'simulator typ {typ}')
@@ -327,17 +279,16 @@ class EasterSimulator:
             self.change_color(split[1], stayup=stayup)
             
         elif typ == 'hidecolor':
-            self.current_color = split[1]
-            if self.using_canvas(): self.canvas.set_color(None if self.ispenup else self.current_color)
+            self.hide_color(split[1])
                     
         elif typ == 'lineto' or typ == 'moveto':
             pos = complex(split[1])
             
-            lw = em.get_save(split, 2, 0) == 1
+            lw = em.get_save(split, 2, 0) == '1'
             color = em.get_save(split, 3, self.current_color)
-            stayup = em.get_save(split, 4, 0) == 1
+            stayup = em.get_save(split, 4, 0) == '1'
             
-            print(stayup)
+            #print(f'long = {lw}')
             
             if typ == 'lineto': self.go_to(pos, long=lw, color=color, info=True)
             if typ == 'moveto': self.go_to(pos, move=True, color=color, stayup=stayup, info=True)
@@ -357,15 +308,11 @@ class EasterSimulator:
         elif typ == 'caliber': self.log(f"{self.y_caliber()}", 10)
             
         else: return False
-        
-    def cleanup(self):
-        self.set_pause(False)
             
     def console_debug_thread(self):
-        escape = False
         commands = []
                 
-        while not escape:
+        while not self.exit_event.is_set():
             if len(commands) == 0:
                 inp = input(f'{em.Colors.RED}?: {em.Colors.END}')
                 commands = inp.split('|')
@@ -374,20 +321,13 @@ class EasterSimulator:
             typ = split[0]
             
             try:
-                if typ == 'ex': escape = True
+                if typ == 'ex': self.escape()
                 elif self.on_console_input(typ, split) == False:
                     raise Exception(f'Unbekannter typ "{typ}".', 10)
             
             except:
                 self.log(f'ERROR:', 10)
                 traceback.print_exc()
-                
-        try: self.canvas.quit()
-        except AttributeError: pass
-        
-        self.cleanup()
-        time.sleep(0.5)
-        exit(0)
 
 ''''
 controller = EasterSimulator({})
