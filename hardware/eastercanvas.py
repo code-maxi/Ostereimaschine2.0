@@ -11,6 +11,8 @@ import simulator
 class EasterCanvas(simulator.EasterSimulator):
     def __init__(self, config: dict):
         super().__init__(config)
+        
+    def log_name(self): return 'EasterCanvas'
 
     def initialize(self):
         super().initialize()

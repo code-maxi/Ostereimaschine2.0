@@ -13,6 +13,8 @@ class EasterSimulator:
         self.config = dict(default.defaultEasterControlerConfig)
         self.config.update(config)
         self.initialize()
+        
+    def log_name(self): return 'EasterSimulator'
     
     def initialize(self):
         self.x_velocity = self.config['xstepper']['steps_per_millimeter']
@@ -142,7 +144,7 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
         prio = em.get_save(args, 0, 0) 
         color = em.get_save(args, 1, em.Colors.LIGHT_CYAN) 
         if prio >= self.print_piority:
-            print(f'{color}EasterSimulator: {obj}{em.Colors.END}')
+            print(f'{color}{self.log_name()}: {obj}{em.Colors.END}')
         
     def pos_to_string(self):
         dp = 1
@@ -240,8 +242,9 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
         for pos in poses: self.step_to(pos, **kwargs)
         
     def set_pen_up(self, up: bool):
+        changed = up != self.ispenup
         self.ispenup = up
-        return up != self.ispenup
+        return changed
         
     def penup(self):   self.set_pen_up(True)
     def pendown(self): self.set_pen_up(False)
@@ -251,6 +254,8 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
     def update_color(self, cp, np): pass
     
     def change_color(self, color: str, **kwargs):
+        while self.pause_event.is_set(): time.sleep(0.001)
+        
         new_pos = self.config['color_pos'].get(color, None)
         stayup = kwargs.get('stayup', False)
         if new_pos != None:
@@ -271,6 +276,7 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
         
         if typ == 'penup': self.penup()
         elif typ == 'pendown': self.pendown()
+        
         elif typ == 'pentoggle': self.set_pen_up(not self.ispenup)
         
         elif typ == 'color':

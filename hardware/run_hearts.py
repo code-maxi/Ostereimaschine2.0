@@ -120,8 +120,8 @@ def act(ct: EasterCanvas):
     #ct.go_to(20 + 50j)
     #ct.go_to(30 + 60j, move=True)
 
-#from controller import EasterControler
-sim = EasterCanvas(
+from controller import EasterControler
+sim = EasterControler(
     {
         'egg_use_percent': 62.5,
         'simulator_start_speed': 0.01,

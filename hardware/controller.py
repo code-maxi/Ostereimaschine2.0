@@ -4,10 +4,10 @@ import RPi.GPIO as GPIO
 import stepper
 import servo
 import eastermath as em
-import simulator
+import eastercanvas
 import leds
 
-class EasterControler(simulator.EasterSimulator):
+class EasterControler(eastercanvas.EasterCanvas):
     def __init__(self, config: dict):
         super().__init__(config)
         
@@ -28,6 +28,8 @@ class EasterControler(simulator.EasterSimulator):
         self.zstepper.setup_pins()
         self.servo.setup_pins()
         self.leds.setup_pins()
+        
+    def log_name(self): return 'EasterControler'
 
     def initialize(self):
         super().initialize()
@@ -61,6 +63,7 @@ class EasterControler(simulator.EasterSimulator):
         self.ystepper.step(direction=ydirection, count=False)
         
     def execute_steps_to(self, deltapos: complex):
+        super().execute_steps_to(deltapos)
         xsteps = deltapos.real
         ysteps = deltapos.imag
         if xsteps != 0 or ysteps != 0:
@@ -89,46 +92,27 @@ class EasterControler(simulator.EasterSimulator):
             
     def adjust_steppers(self, delta_steps):
         xthread = None
-        if not self.pen_up: xthread = self.xstepper.adjust_lazy(delta_steps.real, self.config['max_stepper_speed'])
+        if not self.ispenup: xthread = self.xstepper.adjust_lazy(delta_steps.real, self.config['max_stepper_speed'])
         ythread = self.ystepper.adjust_lazy(delta_steps.imag, self.config['max_stepper_speed'])
         
         if xthread != None:
             xthread.join()
-            if self.using_canvas:
-                self.canvas.update_info({
-                    'x-adj':  f'x adjust = {self.xstepper.adjust_count}',
-                    'x-last': f'x direc = {self.xstepper.last_direction}'
-                })
+            self.update_info({
+                'x-adj':  f'x adjust = {self.xstepper.adjust_count}',
+                'x-last': f'x direc = {self.xstepper.last_direction}'
+            })
+                
             
         if ythread != None:
             ythread.join()
-            if self.using_canvas:
-                self.canvas.update_info({
-                    'y-adj':  f'y adjust = {self.ystepper.adjust_count}',
-                    'y-last': f'y direc =  {self.ystepper.last_direction}'
-                })
-        
-    def step_to(self, ppos: complex, **kwargs):
-        move = kwargs.get('move', False)
-        info = kwargs.get('info', False)
-        stayup = kwargs.get('stayup', False)
-    
-        new_kwargs = dict(kwargs)
-        new_kwargs.update({'info':False})
-
-        delta_steps = super().step_to(ppos, **new_kwargs)
-        
-        if delta_steps != None:
-            if move: self.penup()
-            
-            self.adjust_steppers()
-            self.execute_steps_to(delta_steps.real, delta_steps.imag)
-            
-            if move and not stayup: self.pendown()
-            if info: self.update_info(self.canvas_info_pos())
+            self.update_info({
+                'y-adj':  f'y adjust = {self.ystepper.adjust_count}',
+                'y-last': f'y direc =  {self.ystepper.last_direction}'
+            })
     
     def set_pen_up(self, up: bool):
         if super().set_pen_up(up):
+            #self.log(f'contr set penup {up}')
             newPos = self.config['penup_pos'] if up else self.config['pendown_pos']
             time.sleep(self.config.get('penup_sleep', 0))
             times = 1 if up and False else self.config['servo_times']
@@ -145,7 +129,6 @@ class EasterControler(simulator.EasterSimulator):
         self.leds.state = state
     
     def cleanup(self):
-        super().cleanup()
         self.log('cleanup', 10)
         
         self.ystepper.set_pins_low()
@@ -161,9 +144,7 @@ class EasterControler(simulator.EasterSimulator):
         self.cleanup()
         super().escape()
         
-    def on_console_input(self, typ: str, split: list):
-        print(f'coltroler typ {typ}')
-        
+    def on_console_input(self, typ: str, split: list):        
         if typ == 'servo':
             pos = float(split[1])
             times = int(em.get_save(split, 2, '1'))
