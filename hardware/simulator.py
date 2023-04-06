@@ -35,11 +35,15 @@ class EasterSimulator:
         self.current_color = self.config['start_color']
         self.ispenup = False
 
+        self.time_counter = 0
+
         self.print_piority = 2
         
         self.pause_event = threading.Event()
         self.start_act_event = threading.Event()
         self.exit_event = threading.Event()
+        self.repeat_act_event = threading.Event()
+        self.count_event = threading.Event()
 
         self.status_states = []
 
@@ -50,9 +54,10 @@ class EasterSimulator:
         self.runkey = 'enter'
         self.pausekey = 'p'
 
-        self.adjust_text = f'''________________________________
-| Drucke "{self.config["name"]}"... |
-‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+        headline = f'| Drucke "{self.config["name"]}"...  |'
+        self.adjust_text = f'''{'_'*len(headline)}
+{headline}
+{'‾'*len(headline)}
 Bitte richte den Roboterarm richtig aus, indem du folgende Tasten drückst.
 <{self.xkeys[0].upper()}> Arm nach rechts     <{self.xkeys[1].upper()}> Arm nach links,
 <{self.zkeys[0].upper()}> Stifte ausfahren,   <{self.zkeys[1].upper()}> Stifte einfahren,
@@ -61,10 +66,10 @@ Bitte richte den Roboterarm richtig aus, indem du folgende Tasten drückst.
 <{self.pausekey.upper()}> Druck pausieren, 
 <{self.runkey.upper()}> Mit dem Drucken beginnen.'''
         self.finish_text = f'''| FERTIG! |
-‾‾‾‾‾‾‾‾‾‾
+{'‾'*11}
 Das Ei "{self.config["name"]}" wurde fertiggestellt.\n    
 Du kannst es nun vorsichtig aus der Halterung nehmen.
-Zum Beenden bitte <Ctrl+E> drücken.'''
+Zum Neudrucken <Ctrl+R>, Zum Beenden bitte <Ctrl+E> drücken.'''
                 
         self.log('Simulator __init__ with config: ', 10)
 
@@ -72,15 +77,15 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
 
     def set_status_state(self, state: int, **_):
         if state < 3: self.right_status = state
+        if state == 0: self.time_counter = 0
+        if state == 1: self.count_event.set()
+        if state == 2: self.count_event.clear()
     
     def set_pause(self, pause: bool):
         if self.pause_event.is_set() != pause:
             if pause: self.pause_event.set()
             else:     self.pause_event.clear()
-            self.set_status_state(
-                3 if pause else self.right_status,
-                pause=True
-            )
+            self.set_status_state(3 if pause else self.right_status, pause=True)
             
     def adjust_loop(self):        
         run_pressed = keyboard.is_pressed(self.runkey)
@@ -94,6 +99,7 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
         pause = keyboard.is_pressed(self.pausekey)
         if self.right_status == 1 and pause and not self.pause_pressed:
             self.set_pause(not self.pause_event.is_set())
+
         self.pause_pressed = pause
 
     def run_adjust_thread(self):
@@ -102,19 +108,38 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
             self.adjust_loop()
             time.sleep(self.config['max_stepper_speed'])
         
+    def update_time(self, _: int): pass
+
+    def run_time_thread(self):
+        while not self.exit_event.is_set():
+            if self.count_event.is_set() and not self.pause_event.is_set():
+                self.time_counter += 1
+                self.update_time(self.time_counter)
+                time.sleep(1)
+    
     def run_act_thread(self):
-        self.set_status_state(0)
+        while not self.exit_event.is_set():
+            if not self.direct_run:
+                self.set_status_state(0)
+            self.time_counter = 0
+            self.update_time(self.time_counter)
 
-        if self.direct_run:
-            self.start_act_event.set()
+            if self.direct_run:
+                self.start_act_event.set()
 
-        while not self.start_act_event.is_set():
-            time.sleep(self.config['max_stepper_speed'])
-        
-        self.set_status_state(1)
-        self.act(self)
-        self.go_home()
-        self.set_status_state(2)
+            while not self.start_act_event.is_set():
+                time.sleep(self.config['max_stepper_speed'])
+            
+            self.set_status_state(1)
+            self.act(self)
+            self.go_home()
+            self.set_status_state(2)
+
+            while not self.repeat_act_event.is_set():
+                time.sleep(self.config['max_stepper_speed'])
+
+            self.repeat_act_event.clear()
+            self.start_act_event.clear()
 
     def main_loop(self):
         try: 
@@ -131,12 +156,15 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
             self.console_debug_thread = threading.Thread(target=self.console_debug_thread)
             self.console_debug_thread.start()
 
-        if self.act != None:
-            self.adjust_thread = threading.Thread(target=self.run_adjust_thread)
-            self.adjust_thread.start()
+        self.count_thread = threading.Thread(target=self.run_time_thread)
+        self.count_thread.start()
 
+        if self.act != None:
             self.act_thread = threading.Thread(target=self.run_act_thread)
             self.act_thread.start()
+
+            self.adjust_thread = threading.Thread(target=self.run_adjust_thread)
+            self.adjust_thread.start()
 
         self.main_loop()
         
@@ -146,13 +174,14 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
         if prio >= self.print_piority:
             print(f'{color}{self.log_name()}: {obj}{em.Colors.END}')
         
-    def pos_to_string(self):
+    def pos_to_string(self, *args):
         dp = 1
-        xsteps = round(self.x_pos())
-        ysteps = round(self.y_pos())
-        xdistance = round(self.x_pos() / self.x_velocity, dp)
-        xpercent = round(self.x_percent() * 100, dp)
-        ypercent = round(self.y_percent() * 100, dp)
+        pos = em.get_save(args, 0, self.xy_pos())
+        xsteps = int(pos.real)
+        ysteps = int(pos.imag)
+        xdistance = round(pos.real / self.x_velocity, dp)
+        xpercent = round(pos.real / self.egg_xborder_steps * 100, dp)
+        ypercent = round(em.modulo(pos.imag / self.egg_y_steps * 100, 100), dp)
         return f"({xpercent: 5.1f}% | {ypercent: 5.1f}%)_({xdistance: 5.1f}mm|    ?mm)_({xsteps: 5}x | {ysteps: 5}x)"
         
     def log_pos(self): self.log(self.pos_to_string(), 10)
@@ -191,16 +220,16 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
     
         return xsteps + ysteps * 1j
     
-    def adjust_steppers(self, _): pass
-    def execute_steps_to(self, _: complex): pass
+    def adjust_steppers(self, _: complex): pass
+    def execute_steps_to(self, _: complex, **kwargs): pass
         
     def step_to(self, ppos: complex, **kwargs):
-        while self.pause_event.is_set(): time.sleep(0.001)
+        while self.pause_event.is_set():
+            time.sleep(self.config['max_stepper_speed'])
         
         move = kwargs.get('move', False)
         color = kwargs.get('color', None)
         stayup = kwargs.get('stayup', False)
-        #info = kwargs.get('info', False)
         rel = kwargs.get('rel', False)
         long = kwargs.get('long', False)
 
@@ -219,7 +248,7 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
                 sleep = length / 1000 * speed
                 time.sleep(sleep)
 
-            self.execute_steps_to(delta_steps)
+            self.execute_steps_to(delta_steps, **kwargs)
             self.simulator_pos = new_pos
             
             if move and not stayup: self.pendown()
@@ -236,7 +265,11 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
         self.step_to(new_pos, **kwargs)
         
     def go_home(self):
-        self.go_to(0, move=True, color=self.config['start_color'], stayup=True)
+        print('go home')
+        self.step_to(
+            0, move=True, info=True,
+            color=self.config['start_color'], stayup=True
+        )
         
     def step_to_multiple(self, poses, **kwargs):
         for pos in poses: self.step_to(pos, **kwargs)
@@ -254,7 +287,8 @@ Zum Beenden bitte <Ctrl+E> drücken.'''
     def update_color(self, cp, np): pass
     
     def change_color(self, color: str, **kwargs):
-        while self.pause_event.is_set(): time.sleep(0.001)
+        while self.pause_event.is_set():
+            time.sleep(self.config['max_stepper_speed'])
         
         new_pos = self.config['color_pos'].get(color, None)
         stayup = kwargs.get('stayup', False)

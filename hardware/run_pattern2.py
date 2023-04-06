@@ -1,4 +1,4 @@
-from simulator import EasterSimulator
+from eastercanvas import EasterCanvas
 import eastermath as em
 import shapes
 import time
@@ -6,7 +6,7 @@ import math
 import shapes
 import random
 
-def act(ct: EasterSimulator):
+def act(ct: EasterCanvas):
     print('pattern run')
 
     aviable_colors = [ 'red', 'orange', 'green', 'blue', 'purple']
@@ -65,7 +65,7 @@ def act(ct: EasterSimulator):
 
     spirals_pos = ct.xy_pos()
     def spirals():
-        ct.update_info({ 'spiral_min_angle': f'spiral_min_angle={round(spiral_min_angle) * 180 / math.pi}' })
+        #ct.update_info({ 'spiral_min_angle': f'spiral_min_angle={round(spiral_min_angle) * 180 / math.pi}' })
         for spiral_index in range(spiral_number):
             ypos = spiral_xpos + spiral_index / spiral_number * ct.egg_y_steps * 1j
             
@@ -112,13 +112,11 @@ def act(ct: EasterSimulator):
     spirals()
     triangles(-1, ['tri'])
     lines(-1)
-    
-    ct.go_home()
     #line_dots()
     #sin_dots()
 
 #from controller import EasterControler
-sim = EasterSimulator(
+sim = EasterCanvas(
     {
         'egg_use_percent': 65,
         'simulator_start_speed': 0.0,
@@ -137,4 +135,4 @@ sim = EasterSimulator(
         #'simulator_window_height': 1000
     }
 )
-sim.run(act=act, gui=True, console=True, direct_run=True)
+sim.run(act=act, gui=True, console=True, direct_run=False)

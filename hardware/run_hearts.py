@@ -124,7 +124,7 @@ from controller import EasterControler
 sim = EasterControler(
     {
         'egg_use_percent': 62.5,
-        'simulator_start_speed': 0.01,
+        'simulator_start_speed': 0.1,
         'start_color': 'orange',
         'color_pos': {
             'purple': 0,

@@ -47,9 +47,12 @@ class EasterCanvas(simulator.EasterSimulator):
         self.window.protocol("WM_DELETE_WINDOW", self.escape)
         self.window.bind('<Control-e>', lambda _: self.escape())
         self.window.bind('<Control-f>', lambda _: self.toggle_fullscreen())
+        self.window.bind('<Control-r>', lambda _: self.repeat_act_event.set())
 
         self.paint_all()        
         self.canvas.pack()
+
+        self.update_info({'egg_name': 'Drucke "'+self.config['name']+'"'})
 
         self.log('Canvas __init__.', 10)
         
@@ -80,6 +83,7 @@ class EasterCanvas(simulator.EasterSimulator):
 
         if state == 0:
             infotext = 'ADJUSTING'
+            if not pause: self.paint_all()
             self.info_text(self.adjust_text)
 
         elif state == 1: 
@@ -93,6 +97,16 @@ class EasterCanvas(simulator.EasterSimulator):
         self.update_info({
             'state': f'State = {infotext}'
         })
+
+    def update_time(self, time: int):
+        text = f'{time % 60}:{int(time / 60) % 60}:{int(time / 60 / 60) % 60}'
+        #self.log('Update time to ' + text, 10)
+        self.paint_text_box(
+            text=text,
+            x=self.window_width, y=0,
+            w=1, h=0, padding=5+5j,
+            fill='#fff'
+        )
 
     def set_pen_up(self, up: bool):
         changed = super().set_pen_up(up)
@@ -120,12 +134,21 @@ class EasterCanvas(simulator.EasterSimulator):
         ypos = pos.imag / self.egg_y_steps * self.window_height # (1 - pos.imag) * self.height
         return xpos + ypos * 1j
 
-    def execute_steps_to(self, deltasteps: complex):
+    def execute_steps_to(self, deltasteps: complex, **kwargs):
         super().execute_steps_to(deltasteps)
-        if not self.ispenup:
-            pen_pos = self.xy_pos()
-            new_pos = pen_pos + deltasteps
-            self.line_to(pen_pos, new_pos)
+        info = kwargs.get('info', False)
+        pen_pos = self.xy_pos()
+        new_pos = pen_pos + deltasteps
+
+        if not self.ispenup: self.line_to(pen_pos, new_pos)
+        if info:
+            coordinates = self.pos_to_string(new_pos).split('_')
+            print(f'info {coordinates}')
+            self.update_info({
+                'pos_percent': coordinates[0],
+                'pos_distance': coordinates[1],
+                'pos_steps': coordinates[2]
+            })
 
     def line_to(self, pos1: complex, pos2: complex):
         display1 = self.pos_on_grid(pos1)

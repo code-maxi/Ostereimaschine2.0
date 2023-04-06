@@ -9,6 +9,8 @@ def modulo(pn: complex, z: complex):
     while n >= z: n -= z
     while n < 0: n += z
     return n
+
+def complex_rotate(angle: float): return math.cos(angle) + math.sin(angle) * 1j
     
 def abs_minmax(n1: float, n2: float):
     maxRes = n1

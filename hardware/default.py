@@ -38,7 +38,7 @@ defaultEasterControlerConfig = {
         'startPos': 0.75
     },
     
-    'servo_delay': 0.5,
+    'servo_delay': 0.75,
     'servo_times': 100,
     
     'egg_length': 58.5,
@@ -78,5 +78,4 @@ defaultEasterControlerConfig = {
 #    'simulator_window_height': 600,
     'simulator_on': True,
     'simulator_start_speed': 0.1 # sleep per 1000 steps,
-   
 }
