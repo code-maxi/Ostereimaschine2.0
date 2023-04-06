@@ -27,13 +27,19 @@ def heart(ct: EasterSimulator, **config):
     parts = config.get('heart_parts', 4)
     turn = config.get('heart_turn', 0)
     fill = config.get('heart_fill', 0)
+    onecirc = config.get('heart_onecirc', False)
+
+    colors = config.get('heart_colors', [ct.current_color])
+    colorindex = config.get('heart_colorindex', 0)
+
+    #ct.log(f'color index {colorindex} length {len(colors)} colors {colors}', 10)
     
-    r = size.imag / 4
+    circ_rad = size.imag / (2 if onecirc else 4)
     res = config.get('heart_res', 32)
     sin_points = []
     circ_points = []
 
-    turn_vec = math.cos(turn) + math.sin(turn) * 1j
+    turn_vec = em.complex_rotate(turn)
     sin_width = (1-t) * size.real
     circ_width = t * size.real
     
@@ -42,21 +48,23 @@ def heart(ct: EasterSimulator, **config):
         sin_point =  f * sin_width + math.sin(f * math.pi / 2) * size.imag / 2 * 1j
         
         circ_alpha = (0.5 - f) * math.pi
-        circ_point = math.cos(circ_alpha) * circ_width + math.sin(circ_alpha) * 1j * r
+        circ_point = math.cos(circ_alpha) * circ_width + math.sin(circ_alpha) * 1j * circ_rad
         #print(f'heart {x}/{res} – circ_alpha={circ_alpha} circ_point={circ_point}')
 
         sin_points.append(sin_point)
         circ_points.append(circ_point)
 
+    ct.change_color(colors[colorindex])
+
     if parts >= 1:
         for s in sin_points: ct.step_to( s * turn_vec + old_pos)
     
-    m = sin_width + size.imag / 4 * 1j
+    m = sin_width + (0 if onecirc else size.imag / 4) * 1j
     if parts >= 2:
         for c in circ_points: ct.step_to((c + m) * turn_vec + old_pos)
 
-    m -= size.imag / 2 * 1j
-    if parts >= 3:
+    if parts >= 3 and not onecirc:
+        m -= size.imag / 2 * 1j
         for c in circ_points: ct.step_to((c + m) * turn_vec + old_pos)
 
     sin_points.reverse()
@@ -66,7 +74,7 @@ def heart(ct: EasterSimulator, **config):
     ct.step_to(old_pos)
 
     if fill > 0:
-        subsize = config.get('heart_subsize', ct.xy_stroke_steps() * turn_vec)
+        subsize = config.get('heart_subsize', ct.xy_stroke_steps())
         halffill = config.get('heart_halffill', -1)
         minsize = config.get('heart_minsize', subsize)
         new_size = size - subsize
@@ -76,7 +84,9 @@ def heart(ct: EasterSimulator, **config):
             new_config.update({
                 'heart_size': new_size,
                 'heart_fill': fill - 1,
-                'heart_parts': 2 if fill <= halffill else 4
+                'heart_parts': 2 if fill <= halffill else 4,
+                'heart_colors': colors,
+                'heart_colorindex': (colorindex + 1) % len(colors)
             })
             heart(ct, **new_config)
     

@@ -45,7 +45,7 @@ defaultEasterControlerConfig = {
     'egg_height': 41,
     'egg_use_percent': 70,
     
-    'max_stepper_speed': 0.003,
+    'max_stepper_speed': 0.0025,
     
     'color_pos': {
         'black': 0,
@@ -59,7 +59,7 @@ defaultEasterControlerConfig = {
     'start_color': 'blue',
     #'color_distance': 10.8,
     
-    'pendown_pos': 0.75,
+    'pendown_pos': 0.7,
     'penup_pos': 0.5,
     'penup_sleep': 0.25,
     
@@ -78,5 +78,4 @@ defaultEasterControlerConfig = {
 #    'simulator_window_height': 600,
     'simulator_on': True,
     'simulator_start_speed': 0.1 # sleep per 1000 steps,
-   
 }

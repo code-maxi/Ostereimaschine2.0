@@ -57,12 +57,12 @@ class EasterControler(eastercanvas.EasterCanvas):
         xdirection = -1 if keyboard.is_pressed(self.xkeys[0]) else (1 if keyboard.is_pressed(self.xkeys[1]) else 0)
         ydirection = -1 if keyboard.is_pressed(self.ykeys[0]) else (1 if keyboard.is_pressed(self.ykeys[1]) else 0)
         zdirection = -1 if keyboard.is_pressed(self.zkeys[0]) else (1 if keyboard.is_pressed(self.zkeys[1]) else 0)
-        
+                
         self.zstepper.step(direction=zdirection, count=False)
         self.xstepper.step(direction=xdirection, count=False)
         self.ystepper.step(direction=ydirection, count=False)
         
-    def execute_steps_to(self, deltapos: complex):
+    def execute_steps_to(self, deltapos: complex, **kwargs):
         super().execute_steps_to(deltapos)
         xsteps = deltapos.real
         ysteps = deltapos.imag
@@ -90,7 +90,7 @@ class EasterControler(eastercanvas.EasterCanvas):
             
             thread.join()
             
-    def adjust_steppers(self, delta_steps):
+    def adjust_steppers(self, delta_steps: complex):
         xthread = None
         if not self.ispenup: xthread = self.xstepper.adjust_lazy(delta_steps.real, self.config['max_stepper_speed'])
         ythread = self.ystepper.adjust_lazy(delta_steps.imag, self.config['max_stepper_speed'])
