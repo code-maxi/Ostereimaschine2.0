@@ -1,6 +1,6 @@
 from screeninfo import get_monitors
 monitors = get_monitors()
-default_height = monitors[0].height - 100
+default_height = monitors[0].height - 50
 default_width = monitors[0].width * 0.7
 
 defaultEasterControlerConfig = {

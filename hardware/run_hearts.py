@@ -15,12 +15,12 @@ def act(ct: EasterCanvas):
     line_dash_number = 60
     mm_way = ct.x_stroke_steps / 2
 
-    hearts_number = 10
+    hearts_number = 9
     hearts_xpos = 0
-    hearts_width = 0.35 * ct.egg_xborder_steps
+    hearts_width = 0.32 * ct.egg_xborder_steps
     heart_height_f = 0.9
     heart_t = 0.3
-    heart_fill = 4
+    heart_fill = 100
 
     triangle_number = 12
     triangle_fill = 2
@@ -36,6 +36,10 @@ def act(ct: EasterCanvas):
     curl_width = triangle_width
     curl_xpos = -ct.egg_xborder_steps/2 + curl_width
     curl_colors = aviable_colors
+    
+    sin_res = 32
+    sin_number = 20
+    sin_colors = aviable_colors
 
     def hearts():
         heart_height = ct.egg_y_steps / (hearts_number) * heart_height_f * 1j 
@@ -50,7 +54,7 @@ def act(ct: EasterCanvas):
                 ct, 
                 heart_size = hearts_width + heart_height,
                 heart_t = heart_t,
-                heart_subsize = ct.xy_stroke_steps() * 1.5,
+                heart_subsize = ct.xy_stroke_steps(),
                 heart_halffill = heart_fill,
                 heart_turn = 0 if h % 2 == 1 else math.pi,
                 heart_fill = heart_fill
@@ -99,6 +103,15 @@ def act(ct: EasterCanvas):
                     move=move, color = dashcolor if dash and move else ct.current_color
                 )
                 if dash: move = not move
+                
+    def sin_curve(xf):
+        sinw = mm_way * len(line_types) / 2 * 1.2
+        for i in range(sin_number * sin_res):
+            color = sin_colors[int(i / sin_number / sin_res * len(sin_colors)) % len(sin_colors)]
+            alpha = i / sin_res * 2 * math.pi
+            xpos = (triangles_xpos - sinw) *  xf + math.sin(alpha) * sinw
+            ypos = i / sin_number / sin_res * ct.egg_y_steps * 1j
+            ct.step_to(xpos + ypos, move=i == 0, color=color)
 
     def curl():
         ct.step_to(curl_xpos, move=True)
@@ -115,15 +128,12 @@ def act(ct: EasterCanvas):
     lines(1)
     hearts()
     curl()
-    lines(-1)
-    
-    #ct.go_to(20 + 50j)
-    #ct.go_to(30 + 60j, move=True)
+    sin_curve(-1)
 
 from controller import EasterControler
 sim = EasterControler(
     {
-        'egg_use_percent': 62.5,
+        'egg_use_percent': 60,
         'simulator_start_speed': 0.01,
         'start_color': 'orange',
         'color_pos': {
