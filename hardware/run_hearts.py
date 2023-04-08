@@ -71,7 +71,7 @@ def act(ct: EasterCanvas):
 
                 for fill in range(triangle_fill):
                     for tpos in triangle_poses:
-                        delta = triangle_shrink ** fill * em.comlpex_scalar(tpos, triangle_width * xf + triangle_height)
+                        delta = triangle_shrink ** fill * em.cscalar(tpos, triangle_width * xf + triangle_height)
                         ct.step_to(pos + delta)
 
             if 'circ' in types:

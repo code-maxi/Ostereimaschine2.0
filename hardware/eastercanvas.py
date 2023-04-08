@@ -24,7 +24,7 @@ class EasterCanvas(simulator.EasterSimulator):
         if self.window_eggwidth == None: 
             self.window_eggwidth = round(self.config['egg_length'] / (self.config['egg_height'] * math.pi) * self.window_height)
         
-        self.stroke_width = self.config['pen_stroke_width'] * 3
+        self.stroke_width = self.config['pen_stroke_width'] * 4
         
         self.grid_fill = '#333'
         self.background = '#ddd'
@@ -63,18 +63,17 @@ class EasterCanvas(simulator.EasterSimulator):
 
     def hide_color(self, color: str):
         super().hide_color(color)
-        self.paint_color()
+        self.paint_colors()
+
+
 
     def update_color(self, cp, np):
         super().update_color(cp, np)
-        '''
         self.info.update({
-            'color': f'color = {color if color != None else "–"}',
-            'pen':   f'pen   = {"down" if color != None else "up"}'
+            'color': f'color = {self.current_color}'
         })
         self.paint_info()
-        '''
-        self.paint_color()
+        self.paint_colors()
 
     def set_status_state(self, state: int, **kwargs):
         super().set_status_state(state)
@@ -118,7 +117,7 @@ class EasterCanvas(simulator.EasterSimulator):
                     display_penpos.real + self.stroke_width / 2, display_penpos.imag + self.stroke_width / 2, 
                     fill=self.current_color, outline='#000', width=1
                 )
-            self.paint_color()
+            self.paint_colors()
         return changed
     
     def toggle_fullscreen(self):
@@ -178,7 +177,7 @@ class EasterCanvas(simulator.EasterSimulator):
     
     def paint_all(self):
         self.clear_grid()
-        self.paint_color()
+        self.paint_colors()
         self.paint_info()
         
     def clear_grid(self):
@@ -239,35 +238,36 @@ class EasterCanvas(simulator.EasterSimulator):
             fill='#fff'
         )
             
-    def paint_color(self):
+    def paint_colors(self):
         size = 30
         offset = 10
         
         for color in self.config['color_pos']:
             colorpos = self.config['color_pos'][color]
             if colorpos != None:
-                i = len(self.config['color_pos']) - 1 - colorpos
-                hex_color = em.color_to_hex(color)
-
+                used = colorpos.imag != 1
+                i = len(self.config['color_pos']) - 1 - colorpos.real
                 xpos = offset
                 ypos = (offset + size) * i + offset
 
-                size2 = size * ((0.75 if self.ispenup else 1) if self.current_color == color else 0.4)
-                xpos2 = xpos + (size - size2)/2
-                ypos2 = ypos + (size - size2)/2
-                
                 self.canvas.create_rectangle(
                     xpos, ypos, 
                     xpos + size, ypos + size,
                     fill='#fff',
                     width=0
                 )
-                self.canvas.create_rectangle(
-                    xpos2, ypos2, 
-                    xpos2 + size2, ypos2 + size2,
-                    fill=hex_color,
-                    width=0
-                )
+
+                if used:
+                    hex_color = em.color_to_hex(color)
+                    size2 = size * ((0.75 if self.ispenup else 1) if self.current_color == color else 0.4)
+                    xpos2 = xpos + (size - size2)/2
+                    ypos2 = ypos + (size - size2)/2
+                    self.canvas.create_rectangle(
+                        xpos2, ypos2, 
+                        xpos2 + size2, ypos2 + size2,
+                        fill=hex_color,
+                        width=0
+                    )
                 
     def paint_text_box(self, **kwargs):
         padding = kwargs.get('padding', 20 + 20j)

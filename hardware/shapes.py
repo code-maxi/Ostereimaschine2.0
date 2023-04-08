@@ -6,7 +6,7 @@ def curl(ct: EasterSimulator, **config):
     number = config.get('curl_number', 10)
     size = config.get('curl_size', 10)
     center = config.get('curl_center', 0)
-    old_pos = ct.xy_pos() + em.comlpex_scalar(center, size)
+    old_pos = ct.xy_pos() + em.cscalar(center, size)
 
     height_fac = config.get('curl_height_fac', 0.3)
     res = config.get('curl_res', 32)
@@ -32,6 +32,9 @@ def heart(ct: EasterSimulator, **config):
     colors = config.get('heart_colors', [ct.current_color])
     colorindex = config.get('heart_colorindex', 0)
 
+    goback = config.get('heart_goback', True)
+    stretch = config.get('heart_stretch', 1 + 1j)
+
     #ct.log(f'color index {colorindex} length {len(colors)} colors {colors}', 10)
     
     circ_rad = size.imag / (2 if onecirc else 4)
@@ -56,39 +59,50 @@ def heart(ct: EasterSimulator, **config):
 
     ct.change_color(colors[colorindex])
 
+    def transform(pos: complex): 
+        return em.cscalar(pos * turn_vec, stretch)
+
     if parts >= 1:
-        for s in sin_points: ct.step_to( s * turn_vec + old_pos)
+        for s in sin_points:
+            ct.step_to(transform(s) + old_pos)
     
     m = sin_width + (0 if onecirc else size.imag / 4) * 1j
     if parts >= 2:
-        for c in circ_points: ct.step_to((c + m) * turn_vec + old_pos)
+        for c in circ_points: 
+            ct.step_to(transform(c + m) + old_pos)
 
     if parts >= 3 and not onecirc:
         m -= size.imag / 2 * 1j
-        for c in circ_points: ct.step_to((c + m) * turn_vec + old_pos)
+        for c in circ_points:
+            ct.step_to(transform(c + m) + old_pos)
 
     sin_points.reverse()
     if parts >= 4: 
-        for s in sin_points: ct.step_to((s.real - s.imag * 1j) * turn_vec + old_pos)
+        for s in sin_points: 
+            ct.step_to(transform(s.real - s.imag * 1j) + old_pos)
 
     ct.step_to(old_pos)
 
     if fill > 0:
         subsize = config.get('heart_subsize', ct.xy_stroke_steps())
+        subsize = em.cscalar(subsize, stretch)
         halffill = config.get('heart_halffill', -1)
         minsize = config.get('heart_minsize', subsize)
-        new_size = size - subsize
-        if em.complex_bigger(new_size, minsize):
-            ct.step_to(subsize.real / 2 * turn_vec, rel=True)
+        newsize = size - subsize
+
+        if em.complex_bigger(newsize, minsize):
+            old_pos = ct.xy_pos()
+            #ct.step_to(subsize.real / 2 * turn_vec, rel=True)
             new_config = dict(config)
             new_config.update({
-                'heart_size': new_size,
+                'heart_size': newsize,
                 'heart_fill': fill - 1,
                 'heart_parts': 2 if fill <= halffill else 4,
                 'heart_colors': colors,
                 'heart_colorindex': (colorindex + 1) % len(colors)
             })
             heart(ct, **new_config)
+            if goback: ct.step_to(old_pos)
     
 
 def flower_curve(ct: EasterSimulator, **config):
@@ -187,8 +201,6 @@ def flower(ct: EasterSimulator, **config):
     dotrad = (dotwidth + dotwidth * (size.imag / size.real) * 1j) / 2
 
     ct.step_to(center + dotrad.real, move=True)
-
-    print(f'dotrad={dotrad}')
 
     dotconfig = dict(config)
     dotconfig.update({ 'circle_rad': dotrad, 'circle_center': -1 })

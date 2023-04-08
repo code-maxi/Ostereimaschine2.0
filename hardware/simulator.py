@@ -287,7 +287,7 @@ Zum Neudrucken <Ctrl+R>, Zum Beenden bitte <Ctrl+E> drücken.'''
     def xy_stroke_steps(self): return self.x_stroke_steps + self.y_stroke_steps
         
     def update_color(self, cp, np): pass
-    
+
     def change_color(self, color: str, **kwargs):
         while self.pause_event.is_set():
             time.sleep(self.config['max_stepper_speed'])
