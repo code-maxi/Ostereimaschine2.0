@@ -131,10 +131,10 @@ def act(ct: EasterCanvas):
     sin_curve(-1)
 
 from controller import EasterControler
-sim = EasterCanvas(
+sim = EasterControler(
     {
         'egg_use_percent': 62.5,
-        'simulator_start_speed': 0.1,
+        'simulator_start_speed': 0.0,
         'start_color': 'orange',
         'color_pos': {
             'purple': 0,
@@ -148,4 +148,4 @@ sim = EasterCanvas(
         #'simulator_window_height': 1000
     }
 )
-sim.run(act=act, gui=True, console=False, direct_run=True)
+sim.run(act=act, gui=True, console=False, direct_run=False)

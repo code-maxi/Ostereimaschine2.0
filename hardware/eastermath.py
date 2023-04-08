@@ -48,7 +48,7 @@ def color_to_hex(color):
     elif color == 'blue': res = '#00f'
     elif color == 'orange': res = '#ffa500'
     elif color == 'purple': res = '#800080'
-    elif color == 'yellow': res = '#ffff00'
+    elif color == 'yellow': res = '#ffea00'
     return res
 
 def round_complex(z: complex, *args):

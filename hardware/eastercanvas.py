@@ -102,7 +102,8 @@ class EasterCanvas(simulator.EasterSimulator):
         })
 
     def update_time(self, time: int):
-        text = f'{time % 60}:{int(time / 60) % 60}:{int(time / 60 / 60) % 60}'
+        fstring = '{:02d}'
+        text = f'{fstring.format(int(time / 60 / 60) % 60)}:{fstring.format(int(time / 60) % 60)}:{fstring.format(time % 60)}'
         #self.log('Update time to ' + text, 10)
         self.paint_text_box(
             text=text,

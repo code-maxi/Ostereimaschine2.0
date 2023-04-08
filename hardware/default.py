@@ -16,7 +16,7 @@ defaultEasterControlerConfig = {
         'motor_pins': [23,24,25,26],
         'start_step_sleep': 0.003,
         'steps_of_turn': 4159,
-        'laziness': 90,#100,#50,
+        'laziness': 50,#90,#100,#50,
         #'wheel_radius': 7.65,
         'name': 'X-Stepper',
         'mirror-inverted': True,
@@ -26,7 +26,7 @@ defaultEasterControlerConfig = {
         'motor_pins': [5,6,13,16],
         'start_step_sleep': 0.002,
         'steps_of_turn': 4159,
-        'laziness': 40,
+        'laziness': 0,#40,
         #'wheel_radius': 7.8,
         'name': 'Z-Stepper',
         'mirror-inverted': True
