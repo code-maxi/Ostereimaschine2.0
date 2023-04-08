@@ -9,9 +9,9 @@ import random
 def act(ct: EasterCanvas):
     print('pattern run')
 
-    aviable_colors = [ 'red', 'orange', 'green', 'blue', 'purple']
+    aviable_colors = [ 'red', 'orange', 'green', 'blue' ]
 
-    triangle_width = ct.egg_xborder_steps * 0.25
+    triangle_width = ct.egg_xborder_steps * 0.23
 
     triangle_number = 12
     triangle_fill = 2
@@ -112,36 +112,25 @@ def act(ct: EasterCanvas):
     spirals()
     triangles(-1, ['tri'])
     lines(-1)
-<<<<<<< HEAD
     
-    #line_dots()
-    #sin_dots()
-
 from controller import EasterControler
 sim = EasterControler(
-=======
-    #line_dots()
-    #sin_dots()
-
-#from controller import EasterControler
-sim = EasterCanvas(
->>>>>>> fa5bdff90461dddb7956e43d2b1fb7b64f6e763b
     {
-        'egg_use_percent': 65,
+        'egg_use_percent': 62,
         'simulator_start_speed': 0.0,
         'start_color': 'orange',
         'penup_offset': 0.25,
         'color_pos': {
-            'purple': 0,
-            'blue': 1,
-            'green': 2,
-            'orange': 3,
-            'red': 4
+            #'purple': 0,
+            'blue': 0,
+            'green': 1,
+            'orange': 2,
+            'red': 3
         },
         #'simulator_window_width': None,
-        'name': 'Spiralen und Dreiecke Typ 2',
+        'name': 'Spiralen',
         'start_fullscreen': False,
         #'simulator_window_height': 1000
     }
 )
-sim.run(act=act, gui=True, console=True, direct_run=False)
+sim.run(act=act, gui=True, console=False, direct_run=False)

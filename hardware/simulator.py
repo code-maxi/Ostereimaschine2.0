@@ -105,19 +105,17 @@ Zum Neudrucken <Ctrl+R>, Zum Beenden bitte <Ctrl+E> drücken.'''
     def run_adjust_thread(self):
         self.pause_pressed = False
         while not self.exit_event.is_set():
-            stime = time.time()
-            self.adjust_loop()
-            #print(f'adjust diff {time.time() - stime}')
             time.sleep(self.config['max_stepper_speed'])
+            self.adjust_loop()
         
     def update_time(self, _: int): pass
 
     def run_time_thread(self):
         while not self.exit_event.is_set():
+            time.sleep(1)
             if self.count_event.is_set() and not self.pause_event.is_set():
                 self.time_counter += 1
                 self.update_time(self.time_counter)
-            time.sleep(1)
     
     def run_act_thread(self):
         while not self.exit_event.is_set():

@@ -148,4 +148,4 @@ sim = EasterControler(
         #'simulator_window_height': 1000
     }
 )
-sim.run(act=act, gui=True, console=True, direct_run=False)
+sim.run(act=act, gui=True, console=False, direct_run=False)
