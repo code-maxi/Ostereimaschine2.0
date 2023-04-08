@@ -145,11 +145,15 @@ class EasterControler(eastercanvas.EasterCanvas):
         GPIO.cleanup()
 
     def escape(self):
+        self.info_text('Beende Programm.\nBewege Roboterarm zur Startposition und senke Stepper.')
+        self.go_home()
         self.pendown()
         self.cleanup()
         super().escape()
         
-    def on_console_input(self, typ: str, split: list):        
+    def on_console_input(self, typ: str, split: list):
+        if typ == 'test': self.info_text('Beende Programm.\nBewege Roboterarm zur Startposition und senke Stepper.')
+        
         if typ == 'servo':
             pos = float(split[1])
             times = int(em.get_save(split, 2, '1'))

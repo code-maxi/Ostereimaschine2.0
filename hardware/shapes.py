@@ -85,7 +85,7 @@ def heart(ct: EasterSimulator, **config):
 
     if fill > 0:
         subsize = config.get('heart_subsize', ct.xy_stroke_steps())
-        subsize = em.cscalar(subsize, stretch)
+        #subsize = em.cscalar(subsize, stretch)
         halffill = config.get('heart_halffill', -1)
         minsize = config.get('heart_minsize', subsize)
         newsize = size - subsize
@@ -229,3 +229,25 @@ def spiral(ct: EasterSimulator, **config):
     return radius
 
 
+def rose(ct: EasterSimulator, **config):
+    center  = config.get('rose_center', ct.xy_pos())
+
+    angle  = config.get('rose_start_angle', 0)
+    max_angle = config.get('rose_max_angle', 8 * math.pi)
+
+    radius_increase = config.get('rose_radius_increase', 1 + 1j)
+    angle_increase = config.get('rose_angle_increase', math.pi / 32)
+    hill_number = config.get('rose_hill_number', 1) # for angle = pi
+    hill_size = config.get('rose_hill_size', 0.3)
+    radius = 0
+
+    while angle <= max_angle:
+        hn = int(angle * hill_number / math.pi)
+        radius_fac = em.hill_sin(angle * hn)
+        radius = angle * radius_increase * (1 - hill_size + radius_fac * hill_size)
+        delta = math.cos(angle) * radius.real + math.sin(angle) * radius.imag * 1j
+        ct.step_to(center + delta)
+
+        angle += angle_increase
+
+    return radius

@@ -242,6 +242,7 @@ class EasterCanvas(simulator.EasterSimulator):
             y=self.window_height/2,
             fill='#fff'
         )
+        self.window.update()
             
     def paint_colors(self):
         size = 30

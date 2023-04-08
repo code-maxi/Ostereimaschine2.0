@@ -57,6 +57,8 @@ def round_complex(z: complex, *args):
 
 def cscalar(x: complex, y: complex): return x.real * y.real + x.imag * y.imag * 1j
 
+def hill_sin(alpha: float): return math.sin(alpha) * (1 if int(alpha / math.pi) % 2 == 0 else -1)
+
 def relative_path(path: str):
     absolute = os.path.realpath(__file__).split('/')
     absolute.pop()
