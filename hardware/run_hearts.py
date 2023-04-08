@@ -13,7 +13,7 @@ def act(ct: EasterCanvas):
 
     line_types = [False, True, False] # wheather dashed
     line_dash_number = 60
-    mm_way = ct.x_stroke_steps / 2
+    mm_way = ct.x_stroke_steps
 
     hearts_number = 9
     hearts_xpos = 0
@@ -71,7 +71,7 @@ def act(ct: EasterCanvas):
 
                 for fill in range(triangle_fill):
                     for tpos in triangle_poses:
-                        delta = triangle_shrink ** fill * em.comlpex_scalar(tpos, triangle_width * xf + triangle_height)
+                        delta = triangle_shrink ** fill * em.cscalar(tpos, triangle_width * xf + triangle_height)
                         ct.step_to(pos + delta)
 
             if 'circ' in types:
@@ -131,7 +131,7 @@ def act(ct: EasterCanvas):
     sin_curve(-1)
 
 from controller import EasterControler
-sim = EasterControler(
+sim = EasterCanvas(
     {
         'egg_use_percent': 62.5,
         'simulator_start_speed': 0.1,
@@ -144,8 +144,8 @@ sim = EasterControler(
             'red': 4
         },
         'name': 'Herzen',
-        'start_fullscreen': False,
+        'start_fullscreen': False
         #'simulator_window_height': 1000
     }
 )
-sim.run(act=act, gui=True, console=False, direct_run=False)
+sim.run(act=act, gui=True, console=False, direct_run=True)

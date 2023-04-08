@@ -55,7 +55,7 @@ def round_complex(z: complex, *args):
     digits = get_save(args, 0, 0)
     return round(z.real, digits) + round(z.imag, digits) * 1j
 
-def comlpex_scalar(x: complex, y: complex): return x.real * y.real + x.imag * y.imag * 1j
+def cscalar(x: complex, y: complex): return x.real * y.real + x.imag * y.imag * 1j
 
 def relative_path(path: str):
     absolute = os.path.realpath(__file__).split('/')

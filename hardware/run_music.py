@@ -10,7 +10,7 @@ def act(ct: EasterCanvas):
     xfac = -1
 
     music_lines = 5
-    music_distance = round(ct.egg_xborder_steps * 0.6 / music_lines)
+    music_distance = round(ct.egg_xborder_steps * 0.7 / music_lines)
     music_x_offset = - (music_lines-1) * music_distance / 2 * 0.5
     
     note_number = 14
@@ -22,7 +22,7 @@ def act(ct: EasterCanvas):
     note_beam_width = 5
     small_dot_distance = - note_dot_rad * 0.8
     
-    colors = ['red', 'green', 'blue', 'orange']
+    colors = ['red', 'green', 'blue', 'orange', 'purple']
 
     def random_height(): return random.randrange((music_lines-2) * 2) / 2
 
@@ -38,22 +38,21 @@ def act(ct: EasterCanvas):
         )
 
     def lines():
-        for i in range(music_lines):
+        for i in range(0,music_lines):
             xpos = (i * music_distance + music_x_offset) * xfac
-            ct.change_color(colors[i % len(colors)], stay_up=True)
-            ct.step_to(xpos, move=True)
+            ct.step_to(xpos, move=True, color=colors[i % len(colors)])
             ct.step_to(0, rel=True, long=True)
+            ct.step_to(0.1j * ct.egg_y_steps, rel=True)
 
     def notes():
         y = 0j
         while y.imag < ct.egg_y_steps:
-            value = em.random_item([ 1/8, 1/4, 1/2, 1/8, 1/8, 1/8, 1/4, 1/2, 1/8, 3/8, 3/4, 1/8 ]) #
+            value = em.random_item([ 1/8, 1/4, 1/2, 1/8, 1/8, 1/8, 1/4, 1/2, 1/8 ]) #
             color = em.random_item(colors)
             height = random_height()
             x = (height * music_distance + music_x_offset) * xfac
 
-            ct.change_color(color, stay_up=True)
-            ct.step_to(x + y, move=True)
+            ct.step_to(x + y, move=True, color=color)
             music_dot(value)
 
             if value == 3/8 or value == 3/4:
@@ -77,26 +76,26 @@ def act(ct: EasterCanvas):
                 music_dot(value)
 
                 y += note_distance
-    lines()
+    #lines()
     notes()
 
 from controller import EasterControler
 sim = EasterControler(
     {
-        'egg_use_percent': 65,
+        'egg_use_percent': 60,
         'simulator_start_speed': 0,
         'start_color': 'green',
         'penup_offset': 0.25,
         'color_pos': {
-            'black': None,
-            'red': 1,
-            'green': 2,
+            'purple': 4,
             'blue': 3,
-            'orange': 4
+            'green': 2,
+            'orange': 1,
+            'red': 0
         },
         #'simulator_window_width': None,
         'name': 'Musiknoten',
         'start_fullscreen': False
     }
 )
-sim.run(act=act, gui=True, console=True, direct_run=False)
+sim.run(act=None, gui=True, console=True, direct_run=False)

@@ -54,7 +54,7 @@ def act(ct: EasterSimulator):
 
             for fill in range(triangle_fill):
                 for tpos in triangle_poses:
-                    delta = triangle_shrink ** fill * em.comlpex_scalar(tpos, triangle_width + triangle_height)
+                    delta = triangle_shrink ** fill * em.cscalar(tpos, triangle_width + triangle_height)
                     ct.step_to(pos + delta)
 
             ct.step_to(pos + triangle_width * 0.75 + triangle_height / 2, move=True)

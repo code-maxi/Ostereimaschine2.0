@@ -97,18 +97,18 @@ class EasterControler(eastercanvas.EasterCanvas):
         
         if xthread != None:
             xthread.join()
-            self.update_info({
+            '''self.update_info({
                 'x-adj':  f'x adjust = {self.xstepper.adjust_count}',
                 'x-last': f'x direc = {self.xstepper.last_direction}'
-            })
+            })'''
                 
             
         if ythread != None:
             ythread.join()
-            self.update_info({
+            '''self.update_info({
                 'y-adj':  f'y adjust = {self.ystepper.adjust_count}',
                 'y-last': f'y direc =  {self.ystepper.last_direction}'
-            })
+            })'''
     
     def set_pen_up(self, up: bool):
         if super().set_pen_up(up):
@@ -122,6 +122,11 @@ class EasterControler(eastercanvas.EasterCanvas):
     def update_color(self, cp, np):
         super().update_color(cp, np)
         steps = (np - cp) * self.config['change_color_steps']
+        self.zstepper.adjust_lazy(steps, self.config['max_stepper_speed'])
+        self.update_info({
+            'y-adj':  f'y adjust = {self.zstepper.adjust_count}',
+            'y-last': f'y direc =  {self.zstepper.last_direction}'
+        })
         self.zstepper.turn(steps=steps)
         
     def set_status_state(self, state: int, **_):

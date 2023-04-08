@@ -11,7 +11,7 @@ def act(ct: EasterCanvas):
 
     aviable_colors = [ 'red', 'orange', 'green', 'blue' ]
 
-    triangle_width = ct.egg_xborder_steps * 0.23
+    triangle_width = ct.egg_xborder_steps * 0.22
 
     triangle_number = 12
     triangle_fill = 2
@@ -26,10 +26,10 @@ def act(ct: EasterCanvas):
     
     line_types = [False, True, False] # wheather dashed
     line_dash_number = 50
-    mm_way = ct.x_stroke_steps
+    mm_way = ct.x_stroke_steps * 1.5
     spiral_space = mm_way * (len(line_types)-1)
 
-    spiral_number = 5
+    spiral_number = 4
     spiral_width = ct.egg_xborder_steps - 2*triangle_width - 2*spiral_space
     spiral_max_angle = 6 * math.pi
     spiral_increase = math.pi / 32
@@ -49,7 +49,7 @@ def act(ct: EasterCanvas):
 
                     for fill in range(triangle_fill):
                         for tpos in triangle_poses:
-                            delta = triangle_shrink ** fill * em.comlpex_scalar(tpos, triangle_width * xf + triangle_height)
+                            delta = triangle_shrink ** fill * em.cscalar(tpos, triangle_width * xf + triangle_height)
                             ct.step_to(pos + delta)
 
                 if typ == 'circ':
@@ -97,14 +97,11 @@ def act(ct: EasterCanvas):
             xpos = (triangles_xpos - mm_way * line) *  xf
             color = aviable_colors[line % len(aviable_colors)]
             
-            ct.step_to(xpos, move=True, color=color)
-            
             move = False
             for f in range(line_dash_number + 1):
-                ct.step_to(xpos + f / line_dash_number * ct.egg_y_steps * 1j, move=move)
-                if dash:
-                    ct.change_color(aviable_colors[int(f / len(aviable_colors)) % len(aviable_colors)])
-                    move = not move
+                dash_color = aviable_colors[int(f / len(aviable_colors)) % len(aviable_colors)]
+                ct.step_to(xpos + f / line_dash_number * ct.egg_y_steps * 1j, move=move, color=dash_color)
+                if dash: move = not move
             
     triangles(1, ['tri', 'circ'])
     lines(1)
@@ -112,7 +109,7 @@ def act(ct: EasterCanvas):
     spirals()
     triangles(-1, ['tri'])
     lines(-1)
-    
+
 from controller import EasterControler
 sim = EasterControler(
     {
@@ -121,11 +118,11 @@ sim = EasterControler(
         'start_color': 'orange',
         'penup_offset': 0.25,
         'color_pos': {
-            #'purple': 0,
-            'blue': 0,
-            'green': 1,
-            'orange': 2,
-            'red': 3
+            'purple': 4 + 1j,
+            'blue': 3,
+            'green': 2,
+            'orange': 1,
+            'red': 0
         },
         #'simulator_window_width': None,
         'name': 'Spiralen',
