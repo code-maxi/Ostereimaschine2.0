@@ -32,8 +32,7 @@ def act(ct: EasterCanvas):
                 rose_max_angle = rose_max_angle,
                 rose_radius_increase = rose_radius_increase,
                 rose_hill_number = 0.5,
-                rose_hill_size = 0.2,
-
+                rose_hill_size = 0.2
             )
 
             for leave_xpos in [leaves_xpos,-leaves_xpos]:

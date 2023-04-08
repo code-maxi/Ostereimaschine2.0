@@ -234,26 +234,27 @@ Zum Neudrucken <Ctrl+R>, Zum Beenden bitte <Ctrl+E> drücken.'''
         long = kwargs.get('long', False)
 
         new_pos = ppos + (self.xy_pos() if rel else 0)
-        delta_steps = self.delta_steps(new_pos, long=long)
-                
-        if abs(delta_steps) > 0:
-            self.set_pen_up(move)
-
-            self.adjust_steppers(delta_steps)
-            if color != None: self.change_color(color, stayup = move)
-            
-            speed = self.get_simulator_speed()
-            if not move and speed > 0:
-                length = abs(delta_steps)
-                sleep = length / 1000 * speed
-                time.sleep(sleep)
-
-            self.execute_steps_to(delta_steps, **kwargs)
-            self.simulator_pos = new_pos
-            
-            if move and not stayup: self.pendown()
+        if abs(new_pos.real) <= self.egg_xborder_steps/2:
+            delta_steps = self.delta_steps(new_pos, long=long)
                     
-            return delta_steps        
+            if abs(delta_steps) > 0:
+                self.set_pen_up(move)
+
+                self.adjust_steppers(delta_steps)
+                if color != None: self.change_color(color, stayup = move)
+                
+                speed = self.get_simulator_speed()
+                if not move and speed > 0:
+                    length = abs(delta_steps)
+                    sleep = length / 1000 * speed
+                    time.sleep(sleep)
+
+                self.execute_steps_to(delta_steps, **kwargs)
+                self.simulator_pos = new_pos
+                
+                if move and not stayup: self.pendown()
+                        
+                return delta_steps
         
     def go_to(self, pos: complex, **kwargs):
         if pos.real < -50 or pos.real > 50: raise Exception(f'the x-pos ({pos.real}) has to be between -50% and 50%')
