@@ -145,6 +145,7 @@ class EasterControler(eastercanvas.EasterCanvas):
         GPIO.cleanup()
 
     def escape(self):
+        self.go_home()
         self.pendown()
         self.cleanup()
         super().escape()

@@ -66,10 +66,10 @@ def act(ct: EasterCanvas):
             oldpos = xpos + ypos
             for s in range(line_sin_res * line_sin_number):
                 angle = s / line_sin_res * 2 * math.pi
-                delta = math.sin(angle) * line_sin_width + s / line_sin_res / line_sin_number * ct.egg_y_steps * 1j
+                delta = em.hill_sin(angle) * line_sin_width + s / line_sin_res / line_sin_number * ct.egg_y_steps * 1j
                 ct.step_to(oldpos + delta, move = s == 0, color = color)
 
-    #lines(1)
+    lines(1)
     flowers()
     lines(-1)
     '''ct.go_to(20j, move=True)
@@ -80,8 +80,8 @@ def act(ct: EasterCanvas):
     lucky_clover(math.pi / 4)'''
 
 
-from controller import EasterControler
-sim = EasterControler(
+#from controller import EasterControler
+sim = EasterCanvas(
     {
         'egg_use_percent': 63,
         'simulator_start_speed': 0.0,
@@ -98,4 +98,4 @@ sim = EasterControler(
         'start_fullscreen': False
     }
 )
-sim.run(act=None, gui=True, console=True, direct_run=False)
+sim.run(act=act, gui=True, console=True, direct_run=True)
