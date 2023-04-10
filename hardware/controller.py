@@ -145,7 +145,8 @@ class EasterControler(eastercanvas.EasterCanvas):
         GPIO.cleanup()
 
     def escape(self):
-        self.info_text('Beende Programm.\nBewege Roboterarm zur Startposition und senke Stepper.')
+        self.exit_event.set()
+        self.info_text('Beende Programm...\nBewege Roboterarm zur Startposition und senke Stepper.')
         self.go_home()
         self.pendown()
         self.cleanup()

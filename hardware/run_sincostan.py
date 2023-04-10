@@ -6,10 +6,10 @@ import math
 import shapes
 
 def act(ct: EasterCanvas):
-    rainbow = ['red', 'yellow', 'green', 'blue']
+    rainbow = ['red', 'orange', 'green', 'blue', 'purple']
     sin_width = ct.egg_xborder_steps * 0.2
     distance = 2 * ct.x_velocity
-    sin_number = 10
+    sin_number = 12
     sin_res = 32
     
     def kringel(d: float):
@@ -20,15 +20,23 @@ def act(ct: EasterCanvas):
             ct.step_to(0, rel=True, long=True)
             colori += 1
             xpos += ct.x_stroke_steps * 2
+
+    functions = [
+        lambda a: math.sin(a) * sin_width,
+        lambda a: math.cos(a) * sin_width,
+        #lambda a: (math.cos(a) + math.sin(a) - math.sin(2*a)) * sin_width,
+        lambda a: math.tan(a) * sin_width * 0.1
+    ]
             
     def sin_curves():
-        for o in range(len(rainbow)):
-            color = rainbow[o]
-            yoffset = ct.egg_y_steps / sin_number / len(rainbow) * 1j * o
+        for f in range(len(functions)):
+            fun = functions[f]
+            color = rainbow[f]
+            #yoffset = ct.egg_y_steps / sin_number / len(rainbow) * 1j * f
             for s in range(sin_number * sin_res):
                 angle = s / sin_res * math.pi
-                delta = math.sin(angle) * sin_width + s / sin_res / sin_number * ct.egg_y_steps * 1j
-                ct.step_to(delta + yoffset, move = s == 0, color = color)
+                delta = fun(angle) + s / sin_res / sin_number * ct.egg_y_steps * 1j
+                ct.step_to(delta, move = s == 0, color = color)
     
     kringel(1)
     sin_curves()
@@ -43,13 +51,13 @@ sim = EasterControler(
         'start_color': 'green',
         'penup_offset': 0.25,
         'color_pos': {
-            'purple': 4 + 1j,
-            'yellow': 3,
+            'purple': 4,
+            'blue': 3,
             'green': 2,
-            'blue': 1,
+            'orange': 1,
             'red': 0
         },
-        'name': 'Regenbogen Farben',
+        'name': 'SinCosTan',
         'start_fullscreen': False
     }
 )

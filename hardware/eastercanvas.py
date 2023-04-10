@@ -69,8 +69,6 @@ class EasterCanvas(simulator.EasterSimulator):
         super().hide_color(color)
         self.paint_colors()
 
-
-
     def update_color(self, cp, np):
         super().update_color(cp, np)
         self.info.update({
@@ -157,11 +155,12 @@ class EasterCanvas(simulator.EasterSimulator):
     def line_to(self, pos1: complex, pos2: complex):
         display1 = self.pos_on_grid(pos1)
         display2 = self.pos_on_grid(pos2)
-        #+print(f'canvas line from {pos1} | {display1} to {pos2} | {display2}')
+
+        hexcolor = em.color_to_hex(self.current_color)
         self.canvas.create_line(
             display1.real, display1.imag, 
             display2.real, display2.imag,
-            fill=self.current_color, width=self.stroke_width
+            fill=hexcolor, width=self.stroke_width
         )
     
         if pos2.imag > self.egg_y_steps or pos2.imag < 0:

@@ -1,6 +1,6 @@
 from screeninfo import get_monitors
 monitors = get_monitors()
-default_height = monitors[0].height - 100
+default_height = monitors[0].height
 default_width = monitors[0].width * 0.7
 
 defaultEasterControlerConfig = {
@@ -9,7 +9,7 @@ defaultEasterControlerConfig = {
         'start_step_sleep': 0.003,
         'steps_of_turn': 4110, # 4110 +- 50 Abweichung
         #'mirror-inverted': True, # NEW!
-        'laziness': 25,
+        'laziness': 20,#25,
         'name': 'Y-Stepper'
     },
     'xstepper': {
@@ -46,7 +46,7 @@ defaultEasterControlerConfig = {
     'egg_height': 41,
     'egg_use_percent': 70,
     
-    'max_stepper_speed': 0.0025,
+    'max_stepper_speed': 0.003,
     
     'color_pos': {
         'black': 0,

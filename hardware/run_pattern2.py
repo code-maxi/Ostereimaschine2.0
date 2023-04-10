@@ -115,10 +115,10 @@ sim = EasterControler(
     {
         'egg_use_percent': 62,
         'simulator_start_speed': 0.0,
-        'start_color': 'orange',
+        'start_color': 'green',
         'penup_offset': 0.25,
         'color_pos': {
-            'purple': 4 + 1j,
+            'purple': 4,
             'blue': 3,
             'green': 2,
             'orange': 1,
