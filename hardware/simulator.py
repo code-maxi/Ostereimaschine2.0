@@ -73,7 +73,9 @@ Zum Neudrucken <Ctrl+R>, Zum Beenden bitte <Ctrl+E> drücken.'''
                 
         self.log('Simulator __init__ with config: ', 10)
 
-    def escape(self): pass
+    def escape(self):
+        print("HARD EXIT")
+        sys.exit()
 
     def set_status_state(self, state: int, **_):
         if state < 3: self.right_status = state
@@ -146,11 +148,13 @@ Zum Neudrucken <Ctrl+R>, Zum Beenden bitte <Ctrl+E> drücken.'''
             self.console_debug_thread.join()
             self.act_thread.join()
         except AttributeError: pass
+        
+    def default_direct_run(self): return True
 
     def run(self, **kwargs):
         self.act = kwargs.get('act', None)
-        self.direct_run = kwargs.get('direct_run', False)
-        console = kwargs.get('console', True)
+        self.direct_run = kwargs.get('direct_run', self.default_direct_run())
+        console = kwargs.get('console', False)
         
         if console:
             self.console_debug_thread = threading.Thread(target=self.console_debug_thread)

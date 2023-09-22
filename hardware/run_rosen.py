@@ -1,3 +1,5 @@
+#Rosen:Blaue, rote und rosane Rosen mit Blättern.
+import sys
 from eastercanvas import EasterCanvas
 import eastermath as em
 import shapes
@@ -61,21 +63,18 @@ def act(ct: EasterCanvas):
     roses()
 
 from controller import EasterControler
-sim = EasterControler(
-    {
-        'egg_use_percent': 60,
-        'simulator_start_speed': 0,
-        'start_color': 'green',
-        'penup_offset': 0.25,
-        'color_pos': {
-            'purple': 4 + 1j,
-            'yellow': 3,
-            'green': 2,
-            'blue': 1,
-            'red': 0
-        },
-        'name': 'Rosen',
-        #'start_fullscreen': False
-    }
-)
-sim.run(act=act, gui=True, console=True, direct_run=False)
+{
+    'egg_use_percent': 60,
+    'simulator_start_speed': 0,
+    'start_color': 'green',
+    'penup_offset': 0.25,
+    'color_pos': {
+        'purple': 4 + 1j,
+        'yellow': 3,
+        'green': 2,
+        'blue': 1,
+        'red': 0
+    },
+    'name': 'Rosen'
+}
+(EasterControler(config) if sys.argv[1] == 'C' else EasterCanvas(config)).run(act=act)

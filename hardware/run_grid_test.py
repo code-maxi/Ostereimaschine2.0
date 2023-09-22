@@ -1,3 +1,5 @@
+#unuse
+import sys
 from controller import EasterControler
 from simulator import EasterSimulator
 import eastermath as em

@@ -1,3 +1,5 @@
+#unuse
+import sys
 from simulator import EasterSimulator
 import eastermath as em
 import shapes

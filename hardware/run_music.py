@@ -1,3 +1,5 @@
+#Musiknoten:Ich kann auch komponieren! Ich schreibe dir eine zufällig erstellte Melodie auf das Ei.
+import sys
 from eastercanvas import EasterCanvas
 import eastermath as em
 import shapes
@@ -80,22 +82,18 @@ def act(ct: EasterCanvas):
     notes()
 
 from controller import EasterControler
-sim = EasterControler(
-    {
-        'egg_use_percent': 60,
-        'simulator_start_speed': 0,
-        'start_color': 'green',
-        'penup_offset': 0.25,
-        'color_pos': {
-            'purple': 4,
-            'blue': 3,
-            'green': 2,
-            'orange': 1,
-            'red': 0
-        },
-        #'simulator_window_width': None,
-        'name': 'Musiknoten',
-        'start_fullscreen': False
-    }
-)
-sim.run(act=None, gui=True, console=True, direct_run=False)
+config = {
+    'egg_use_percent': 60,
+    'simulator_start_speed': 0,
+    'start_color': 'green',
+    'penup_offset': 0.25,
+    'color_pos': {
+        'purple': 4,
+        'blue': 3,
+        'green': 2,
+        'orange': 1,
+        'red': 0
+    },
+    'name': 'Musiknoten'
+}
+(EasterControler(config) if sys.argv[1] == 'C' else EasterCanvas(config)).run(act=act)

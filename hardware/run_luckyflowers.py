@@ -1,3 +1,5 @@
+#Glücksklee:Grüne, vierblättrige Kleeblätter mit geschwungenem Wellen am Rand.
+import sys
 import random
 from eastercanvas import EasterCanvas
 import eastermath as em
@@ -84,26 +86,19 @@ def act(ct: EasterCanvas):
     lucky_clover(math.pi / 4)'''
 
 
-#from controller import EasterControler
-sim = EasterCanvas(
-    {
-        'egg_use_percent': 60,
-        'simulator_start_speed': 0.0,
-        'start_color': 'yellow',
-        'penup_offset': 0.25,
-        'color_pos': {
-            'black': 4 + 1j,
-            'yellow': 3,
-            'orange': 2,
-            'green': 1,
-            'red': 0
-        },
-        'name': 'Glücksklee',
-        'start_fullscreen': False
-    }
-)
-<<<<<<< HEAD
-sim.run(act=act, gui=True, console=False, direct_run=False)
-=======
-sim.run(act=act, gui=True, console=True, direct_run=True)
->>>>>>> 607f30801e16d8cdaa5f09a0dcd37572b7738781
+from controller import EasterControler
+config = {
+    'egg_use_percent': 60,
+    'simulator_start_speed': 0.0,
+    'start_color': 'yellow',
+    'penup_offset': 0.25,
+    'color_pos': {
+        'black': 4 + 1j,
+        'yellow': 3,
+        'orange': 2,
+        'green': 1,
+        'red': 0
+    },
+    'name': 'Glücksklee'
+}
+(EasterControler(config) if sys.argv[1] == 'C' else EasterCanvas(config)).run(act=act)

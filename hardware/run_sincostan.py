@@ -1,3 +1,5 @@
+#Sinus, Cosinus und Tangens:Da ich ein Computer bin, ist Mathe meine Leidenschaft! Ich plotte dir die Funktionsgraphen der drei Trigonomentrischen Funktionen auf das Ei.
+import sys
 import random
 from eastercanvas import EasterCanvas
 import eastermath as em
@@ -44,21 +46,19 @@ def act(ct: EasterCanvas):
 
 
 from controller import EasterControler
-sim = EasterControler(
-    {
-        'egg_use_percent': 63,
-        'simulator_start_speed': 0.0,
-        'start_color': 'green',
-        'penup_offset': 0.25,
-        'color_pos': {
-            'purple': 4,
-            'blue': 3,
-            'green': 2,
-            'orange': 1,
-            'red': 0
-        },
-        'name': 'SinCosTan',
-        'start_fullscreen': False
-    }
-)
-sim.run(act=act, gui=True, console=True, direct_run=False)
+config = {
+    'egg_use_percent': 63,
+    'simulator_start_speed': 0.0,
+    'start_color': 'green',
+    'penup_offset': 0.25,
+    'color_pos': {
+        'purple': 4,
+        'blue': 3,
+        'green': 2,
+        'orange': 1,
+        'red': 0
+    },
+    'name': 'Sinus, Cosinus und Tangens',
+    'start_fullscreen': False
+}
+(EasterControler(config) if sys.argv[1] == 'C' else EasterCanvas(config)).run(act=act)

@@ -1,3 +1,4 @@
+#unuse
 from simulator import EasterSimulator
 import eastermath as em
 import time
@@ -39,4 +40,4 @@ sim = EasterSimulator(
         'name': 'Sterne und Eier'
     }
 )
-sim.run(act=act, gui=True, console=True)
+sim.run(act=act, gui=True, console=False)

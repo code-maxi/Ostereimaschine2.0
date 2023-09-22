@@ -1,4 +1,6 @@
-from eastercanvas import EasterCanvas
+#Herzen:Ein regenbogenfarbenes Muster mit Dreiecken, bunten Herzen und Kringeln.
+from eastercanvas import
+import sys
 import eastermath as em
 import shapes
 import time
@@ -131,21 +133,18 @@ def act(ct: EasterCanvas):
     sin_curve(-1)
 
 from controller import EasterControler
-sim = EasterControler(
-    {
-        'egg_use_percent': 62.5,
-        'simulator_start_speed': 0.0,
-        'start_color': 'orange',
-        'color_pos': {
-            'purple': 0,
-            'blue': 1,
-            'green': 2,
-            'orange': 3,
-            'red': 4
-        },
-        'name': 'Herzen',
-        'start_fullscreen': False
-        #'simulator_window_height': 1000
-    }
-)
-sim.run(act=act, gui=True, console=False, direct_run=False)
+config = {
+    'egg_use_percent': 62.5,
+    'simulator_start_speed': 0.0,
+    'start_color': 'orange',
+    'color_pos': {
+        'purple': 0,
+        'blue': 1,
+        'green': 2,
+        'orange': 3,
+        'red': 4
+    },
+    'name': 'Herzen'
+    #'simulator_window_height': 1000
+}
+(EasterControler(config) if sys.argv[1] == 'C' else EasterCanvas(config)).run(act=act)

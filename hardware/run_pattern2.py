@@ -1,3 +1,5 @@
+#unuse
+import sys
 from eastercanvas import EasterCanvas
 import eastermath as em
 import shapes

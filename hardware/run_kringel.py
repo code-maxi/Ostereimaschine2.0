@@ -1,3 +1,5 @@
+#Spiralen:Ein regenbogenfarbenes Muster mit Dreiecken und Spiralen. 
+import sys
 import random
 from eastercanvas import EasterCanvas
 import eastermath as em
@@ -34,23 +36,19 @@ def act(ct: EasterCanvas):
     sin_curves()
     kringel(-1)
 
-
 from controller import EasterControler
-sim = EasterControler(
-    {
-        'egg_use_percent': 63,
-        'simulator_start_speed': 0.0,
-        'start_color': 'green',
-        'penup_offset': 0.25,
-        'color_pos': {
-            'purple': 4 + 1j,
-            'yellow': 3,
-            'green': 2,
-            'blue': 1,
-            'red': 0
-        },
-        'name': 'Regenbogen Farben',
-        'start_fullscreen': False
-    }
-)
-sim.run(act=act, gui=True, console=True, direct_run=False)
+config = {
+    'egg_use_percent': 63,
+    'simulator_start_speed': 0.0,
+    'start_color': 'green',
+    'penup_offset': 0.25,
+    'color_pos': {
+        'purple': 4 + 1j,
+        'yellow': 3,
+        'green': 2,
+        'blue': 1,
+        'red': 0
+    },
+    'name': 'Spiralen',
+}
+(EasterControler(config) if sys.argv[1] == 'C' else EasterCanvas(config)).run(act=act)

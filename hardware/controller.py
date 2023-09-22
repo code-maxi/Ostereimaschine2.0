@@ -10,6 +10,7 @@ import leds
 class EasterControler(eastercanvas.EasterCanvas):
     def __init__(self, config: dict):
         super().__init__(config)
+        self.run_hardware = True
         
     def setup(self):
         self.log('Easter Controller setup...', 10)
@@ -29,6 +30,7 @@ class EasterControler(eastercanvas.EasterCanvas):
         self.servo.setup_pins()
         self.leds.setup_pins()
         
+    def default_direct_run(self): return False
     def log_name(self): return 'EasterControler'
 
     def initialize(self):
@@ -49,7 +51,7 @@ class EasterControler(eastercanvas.EasterCanvas):
     def x_percent(self): return (self.x_pos() / self.egg_xborder_steps) * 100
     def y_percent(self): return (self.y_pos() / self.ystepper.steps_of_turn()) * 100
     
-    def get_simulator_speed(self): return 0 # ignore simulator_speed
+    def get_simulator_speed(self): return 0
 
     def adjust_loop(self):
         super().adjust_loop()
@@ -101,8 +103,6 @@ class EasterControler(eastercanvas.EasterCanvas):
                 'x-adj':  f'x adjust = {self.xstepper.adjust_count}',
                 'x-last': f'x direc = {self.xstepper.last_direction}'
             })'''
-                
-            
         if ythread != None:
             ythread.join()
             '''self.update_info({
