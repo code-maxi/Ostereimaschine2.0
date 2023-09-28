@@ -246,19 +246,19 @@ class EasterCanvas(simulator.EasterSimulator):
     def paint_colors(self):
         size = 30
         offset = 10
-        
-        ybox = 2*offset + (len(self.config['color_pos']))*(offset + size)
+
+        ybox = 4*offset + (len(self.config['color_pos']))*(offset + size)
         
         self.canvas.create_rectangle(
-            1.5*offset, offset, 
-            2.5*offset + size, ybox,
+            3.5*offset, 3*offset, 
+            4.5*offset + size, ybox,
             fill='#999',
             width=0
         )
         
         self.canvas.create_rectangle(
-            0, ybox,
-            4*offset + size, ybox + size*4,
+            2*offset, ybox,
+            6*offset + size, ybox + size*4,
             fill='#999',
             width=0
         )
@@ -268,8 +268,8 @@ class EasterCanvas(simulator.EasterSimulator):
             if colorpos != None:
                 used = colorpos.imag != 1
                 i = len(self.config['color_pos']) - 1 - colorpos.real
-                xpos = 2*offset
-                ypos = (offset + size) * i + 2*offset
+                xpos = 4*offset
+                ypos = (offset + size) * i + 4*offset
 
                 if used:
                     hex_color = em.color_to_hex(color)

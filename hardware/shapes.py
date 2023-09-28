@@ -1,4 +1,5 @@
 import math
+import random
 import eastermath as em
 from simulator import EasterSimulator
 
@@ -169,14 +170,13 @@ def circle(ct: EasterSimulator, **config):
 
     move_back = config.get('circle_move_back', True)
 
-    ct.change_color(colors[colorindex])
     end_pos: complex
 
     for a in range(res+1):
         alpha = a / res * 2 * math.pi + circle_angleadd
         delta = (math.cos(alpha) * rad.real + math.sin(alpha) * rad.imag * 1j)
         end_pos = delta + center
-        ct.step_to(end_pos, move=(move and a == 0))
+        ct.step_to(end_pos, move=(move and a == 0), color=colors[colorindex])
 
     if fill > 0:
         substeps = config.get('circle_substeps', ct.xy_stroke_steps())
@@ -251,3 +251,63 @@ def rose(ct: EasterSimulator, **config):
         angle += angle_increase
 
     return radius
+
+letters = {
+    'S': [ 1, 0, 0.5j, 1+0.5j, 1+1j, 1j ],
+    'C': [ 1, 0, 1j, 1+1j ],
+    'H': [ 0, 1j, 0.5j, 1+0.5j, 1, 1+1j ],
+    'U': [ 0, 1j, 1+1j, 1 ],
+    'L': [ 0, 1j, 1+1j ],
+    'K': [ 0, 1j, 0.5j, 1, 0.5j, 1+1j ],
+    'N': [ 1j, 0, 1+1j, 1 ],
+    'T': [ 0, 1, 0.5, 0.5+1j ]
+}
+
+def drawLetter(
+        l: str, 
+        ct: EasterSimulator, 
+        pos: complex, 
+        size: complex, 
+        rotate: complex, 
+        color: str,
+        boldness: int,
+        boldoff: complex
+    ):
+    for b in range(boldness):
+        move = True
+        for p in letters[l]:
+            off = (p.real*size.real + p.imag*size.imag * 1j) + boldoff*b
+            ct.step_to(pos + off*rotate, move=move, color=color)
+            move = False
+
+def drawString(ct: EasterSimulator, **config):
+    text = config.get('text')
+    size = config.get('size')
+    pos = config.get('pos')
+    colors = config.get('colors', [ct.current_color])
+    distance = config.get('dis', 1.8)
+    firstletter = config.get('fl', 1.4)
+    randturn = config.get('randturn', math.pi/40)
+    randy = config.get('randy', 200)
+    randsize = config.get('randsize', 0.1)
+    rotate = em.complex_rotate(config.get('turn', 0))
+    boldness = config.get('bold', 3)
+    randcolor = config.get('randcolor', False)
+    boldoff = config.get('boldoff', ct.xy_stroke_steps())
+    i = 0
+    xpos = 0
+    for letter in text:
+        print(f'draw letter {letter} on {xpos + pos.imag*1j}')
+        own_size = (firstletter if i == 0 else 1) * size * (random.random()*2*randsize - randsize + 1)
+        yoff = (size.imag - own_size.imag + random.random()*randy*2 - randy) * 1j
+        rot = rotate * em.complex_rotate((random.random()*randturn*2 - randturn))
+        drawLetter(
+            letter, ct, 
+            (xpos + yoff)*rotate + pos, 
+            own_size, rot,
+            colors[int(len(colors)*random.random()) if randcolor else i % len(colors)],
+            boldness,
+            boldoff
+        )
+        xpos += own_size.real * distance
+        i += 1
