@@ -1,5 +1,5 @@
 #Herzen:Ein regenbogenfarbenes Muster mit Dreiecken, bunten Herzen und Kringeln.
-from eastercanvas import
+from eastercanvas import EasterCanvas
 import sys
 import eastermath as em
 import shapes

@@ -18,7 +18,7 @@ for egg in availableEggs:
     if 'unuse' not in line:
         lines = line[1:].split(':')
         eggs[lines[0].lower()] = {
-            "title": lines[1],
+            "title": lines[1].replace('|', '\n   '),
             "file": egg
         }
     
@@ -26,23 +26,28 @@ while True:
     os.system('cls' if os.name == 'nt' else 'clear')
     print(f"""  
   |  {bcolors.BOLD}Hallo! Ich bin die Ostereimaschine.{bcolors.ENDC}
-  |  Ich kann verschiedenste Muster zeichnen, wie etwa Blumen oder Musiknoten, die unten aufgelistet sind.
-  |  Du musst mir nur sagen was ich machen soll, indem du den Namen deines Lieblingsmusters in die Zeile
-  |  schreibst und dann <ENTER> drückst.
-  |  Wenn du mich jedoch beenden willst, drücke einfach <Ctrl+C>.
+  |
+  |  Ich kann Muster, wie etwa Blumen und Musiknoten, in verschiedensten Farben und Formen zeichnen.
+  |  Indem du den Namen deines Lieblingsmusters (z.B. Herzen oder Rosen) in die Zeile schreibst und dann <ENTER> drückst,
+  |  kannst du mir auftragen ein Muster zu zeichnen. Wenn du das Muster zuerst nur simulieren willst, ohne es gleich zu
+  |  drucken, kannst du in der darauffolgenden Zeile <S> eingeben.
+  |
   |  Ich freue mich schon auf meine nächste Aufgabe! :-)
-  ___________________________________________________
+  
 """)
     for key, value in eggs.items():
-        print(f'{bcolors.BOLD}Muster "{key}":{bcolors.ENDC}\n{value["title"]}')
+        print(f'   {bcolors.BOLD}Muster "{key}":{bcolors.ENDC}\n   {value["title"]}')
        
     file = None
     while file == None:
-        name = input(f'{bcolors.OKBLUE}Gib hier bitte dein Muster ein:{bcolors.ENDC}{bcolors.BOLD} ').lower()
+        name = input(f'   {bcolors.OKBLUE}Gib hier bitte dein Muster ein:{bcolors.ENDC}{bcolors.BOLD} ').lower()
         file = f'/home/pi/Robotik/Ostereimaschine2.0/hardware/{eggs[name]["file"]}' if name in eggs else None
         if file == None:
-            print(f'{bcolors.ENDC}{bcolors.WARNING}Das habe ich leider nicht verstanden. Könntest du das bitte nochmal wiederholen?{bcolors.ENDC}\n')
+            print(f'   {bcolors.ENDC}{bcolors.WARNING}Das habe ich leider nicht verstanden. Könntest du das bitte nochmal wiederholen?{bcolors.ENDC}\n')
             
-    argument = input(f'{bcolors.ENDC}{bcolors.OKBLUE}Willst du dir das Ei erstmal nur angucken (<S> drücken) oder gleich drucken (<C> drücken)?{bcolors.ENDC}{bcolors.BOLD} ').lower()
-    argument = 'C' if argument == 'C' else 'S'    
+    argument = input(f'   {bcolors.ENDC}{bcolors.OKBLUE}Willst du dir das Ei erstmal nur angucken (<S> drücken) oder gleich drucken (<C> drücken)?{bcolors.ENDC}{bcolors.BOLD} ').lower()
+    argument = 'C' if argument == 'c' else 'S'    
     os.system(f'python3 {file} {argument} > /dev/null &')
+    
+    
+    

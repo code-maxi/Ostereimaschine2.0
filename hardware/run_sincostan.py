@@ -1,4 +1,4 @@
-#Sinus, Cosinus und Tangens:Da ich ein Computer bin, ist Mathe meine Leidenschaft! Ich plotte dir die Funktionsgraphen der drei Trigonomentrischen Funktionen auf das Ei.
+#Sincostan:Da ich ein Computer bin, ist Mathe meine Leidenschaft!|Ich plotte dir die Funktionsgraphen der drei Trigonomentrischen Funktionen auf das Ei.
 import sys
 import random
 from eastercanvas import EasterCanvas
@@ -58,7 +58,6 @@ config = {
         'orange': 1,
         'red': 0
     },
-    'name': 'Sinus, Cosinus und Tangens',
-    'start_fullscreen': False
+    'name': 'Sincostan'
 }
 (EasterControler(config) if sys.argv[1] == 'C' else EasterCanvas(config)).run(act=act)

@@ -54,27 +54,41 @@ class EasterSimulator:
         self.runkey = 'enter'
         self.pausekey = 'p'
 
-        headline = f'| Drucke "{self.config["name"]}"...  |'
+        headline = f'| Ich soll nun das Muster "{self.config["name"]}" drucken...  |'
         self.adjust_text = f'''{'_'*len(headline)}
 {headline}
 {'‾'*len(headline)}
-Bitte richte den Roboterarm richtig aus, indem du folgende Tasten drückst.
+Um mich richtig vorzubereiten, musst du zuerst die Farbstifte in meine Halterung
+(nach der Abbildung oben links) stecken. Um dies zu erleichtern, kannst du sie gerne abnehmen.
+
+Danach musst du meinen Roboterarm an die richtige Stelle bewegen. Dabei muss die
+Stiftspitze der ersten Farbe direkt mittig auf dem Ei liegen. In der Abbildung der
+Stiftehalterung links oben ist die erste Farbe durch das große Quadrat gekennzeichnet.
+
 <{self.xkeys[0].upper()}> Arm nach rechts     <{self.xkeys[1].upper()}> Arm nach links,
 <{self.zkeys[0].upper()}> Stifte ausfahren,   <{self.zkeys[1].upper()}> Stifte einfahren,
 <{self.ykeys[0].upper()}> Ei vorwärts drehen, <{self.ykeys[1].upper()}> Ei rückwärs drehen,
-<{self.upkey.upper()}> Stift heruterlassen,
-<{self.pausekey.upper()}> Druck pausieren, 
-<{self.runkey.upper()}> Mit dem Drucken beginnen.'''
-        self.finish_text = f'''| FERTIG! |
+
+Um zu testen, ob der Roboterarm nun wirklich richtig platziert ist, kannst du <{self.upkey.upper()}>
+drücken, um die Stifte abzulassen. Wichtig dabei ist, dass nur eine Stiftspitze das Ei berührt!
+
+Wenn du mit der Vorbereitung fertig bist, drücke <{self.runkey.upper()}> um den Druck endlich zu beginnen.
+Viel Spaß! '''
+        
+        self.finish_text = f'''| Fertig, herzlichen Glückwunsch! |
 {'‾'*11}
-Das Ei "{self.config["name"]}" wurde fertiggestellt.\n    
-Du kannst es nun vorsichtig aus der Halterung nehmen.
-Zum Neudrucken <Ctrl+R>, Zum Beenden bitte <Ctrl+E> drücken.'''
+Das Ei "{self.config["name"]}" wurde nun fertiggestellt und
+du kannst es vorsichtig aus der Halterung nehmen. Wenn du genau
+dieses Ei nochmal drucken willst drücke bitte <Ctrl+R>.
+Willst du ein anderes Muster ausprobieren drücke <Ctrl+E>.
+Ich freue mich auf weitere Aufträge!
+'''
                 
         self.log('Simulator __init__ with config: ', 10)
 
     def escape(self):
         print("HARD EXIT")
+        self.exit_event.set()
         sys.exit()
 
     def set_status_state(self, state: int, **_):

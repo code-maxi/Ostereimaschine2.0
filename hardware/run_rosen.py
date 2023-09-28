@@ -63,7 +63,7 @@ def act(ct: EasterCanvas):
     roses()
 
 from controller import EasterControler
-{
+config = {
     'egg_use_percent': 60,
     'simulator_start_speed': 0,
     'start_color': 'green',

@@ -53,7 +53,7 @@ class EasterCanvas(simulator.EasterSimulator):
         self.canvas.pack()
 
         self.update_info({
-            'egg_name': 'Drucke "'+self.config['name']+'"',
+            'egg_name': ''+self.config['name']+' wird gedruckt...',
             'egg_length': f"Länge = {self.config['egg_length']}mm",
             'egg_use_percent': f"Benutze {self.config['egg_use_percent']}%",
         })
@@ -62,6 +62,7 @@ class EasterCanvas(simulator.EasterSimulator):
         
     def escape(self):
         self.log('Canvas EXIT', 10)
+        self.exit_event.set()
         self.window.destroy()
         super().escape()
 
@@ -102,7 +103,6 @@ class EasterCanvas(simulator.EasterSimulator):
     def update_time(self, time: int):
         fstring = '{:02d}'
         text = f'{fstring.format(int(time / 60 / 60) % 60)}:{fstring.format(int(time / 60) % 60)}:{fstring.format(time % 60)}'
-        #self.log('Update time to ' + text, 10)
         self.paint_text_box(
             text=text,
             x=self.window_width, y=0,
@@ -247,20 +247,29 @@ class EasterCanvas(simulator.EasterSimulator):
         size = 30
         offset = 10
         
+        ybox = 2*offset + (len(self.config['color_pos']))*(offset + size)
+        
+        self.canvas.create_rectangle(
+            1.5*offset, offset, 
+            2.5*offset + size, ybox,
+            fill='#999',
+            width=0
+        )
+        
+        self.canvas.create_rectangle(
+            0, ybox,
+            4*offset + size, ybox + size*4,
+            fill='#999',
+            width=0
+        )
+        
         for color in self.config['color_pos']:
             colorpos = self.config['color_pos'][color]
             if colorpos != None:
                 used = colorpos.imag != 1
                 i = len(self.config['color_pos']) - 1 - colorpos.real
-                xpos = offset
-                ypos = (offset + size) * i + offset
-
-                self.canvas.create_rectangle(
-                    xpos, ypos, 
-                    xpos + size, ypos + size,
-                    fill='#fff',
-                    width=0
-                )
+                xpos = 2*offset
+                ypos = (offset + size) * i + 2*offset
 
                 if used:
                     hex_color = em.color_to_hex(color)
